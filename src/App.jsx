@@ -5,12 +5,14 @@ import Dashboard from './pages/Dashboard.jsx'
 import Products from './pages/Products.jsx'
 import Transactions from './pages/Transactions.jsx'
 import Alerts from './pages/Alerts.jsx'
+import Investigations from './pages/Investigations.jsx'
 import PlaceholderPage from './pages/PlaceholderPage.jsx'
 import { evaluateRules } from './monitoring/rules.js'
 import { business as initialBusiness, users, products as seedProducts, transactions as seedTransactions } from './data/mockData.js'
 
-// Stage 3 monitoring: rule-based alerts + review. In-memory only.
-// No ML, no autonomous investigations or decisions.
+// Stage 4 investigations: alert -> review -> investigation -> evidence ->
+// finding -> resolution. Human decides everything. In-memory only.
+// No ML, no AI, no autonomous decisions.
 function formatNow() {
   const d = new Date()
   const pad = (n) => String(n).padStart(2, '0')
@@ -24,6 +26,9 @@ function App() {
   const [txnList, setTxnList] = useState(seedTransactions)
   const [statusById, setStatusById] = useState({})
   const [selectedAlertId, setSelectedAlertId] = useState(null)
+  const [investigations, setInvestigations] = useState([])
+  const [selectedInvestigationId, setSelectedInvestigationId] = useState(null)
+  const [auditLog, setAuditLog] = useState([])
   const currentUser = users[0]
 
   function addProduct(data) {
@@ -54,6 +59,111 @@ function App() {
     setPage('Alerts')
   }
 
+  function logAudit(investigationId, action) {
+    const entry = {
+      id: `audit-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+      investigationId,
+      userId: currentUser.id,
+      action,
+      date: formatNow(),
+    }
+    setAuditLog((prev) => [...prev, entry])
+  }
+
+  function startInvestigation(alertId) {
+    const existing = investigations.find((i) => i.alertId === alertId && i.status !== 'Closed')
+    if (existing) {
+      setSelectedInvestigationId(existing.id)
+      setPage('Investigations')
+      return
+    }
+    const alert = alerts.find((a) => a.id === alertId)
+    if (!alert || (alert.status !== 'New' && alert.status !== 'Under Review')) return
+    const id = `inv-${Date.now()}`
+    const investigation = {
+      id,
+      alertId,
+      alertType: alert.type,
+      alertSeverity: alert.severity,
+      investigatorId: currentUser.id,
+      status: 'Open',
+      relatedTransactionIds: [...alert.relatedTransactionIds],
+      relatedProductIds: [...alert.relatedProductIds],
+      notes: [],
+      finding: '',
+      findingOther: '',
+      resolutionNotes: '',
+      resolvedById: '',
+      createdAt: formatNow(),
+      resolvedAt: '',
+    }
+    setInvestigations((prev) => [...prev, investigation])
+    updateAlertStatus(alertId, 'Investigating')
+    logAudit(id, 'Investigation opened')
+    setSelectedInvestigationId(id)
+    setPage('Investigations')
+  }
+
+  function openInvestigation(id) {
+    setSelectedInvestigationId(id)
+    setPage('Investigations')
+  }
+
+  function addNote(invId, content) {
+    setInvestigations((prev) => prev.map((inv) => {
+      if (inv.id !== invId) return inv
+      const note = {
+        id: `note-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+        authorId: currentUser.id,
+        content,
+        date: formatNow(),
+      }
+      return {
+        ...inv,
+        notes: [...inv.notes, note],
+        status: inv.status === 'Open' ? 'Under Investigation' : inv.status,
+      }
+    }))
+    logAudit(invId, 'Note added')
+  }
+
+  function assignInvestigator(invId, userId) {
+    setInvestigations((prev) => prev.map((inv) => (
+      inv.id === invId ? { ...inv, investigatorId: userId } : inv
+    )))
+  }
+
+  function recordFinding(invId, finding, findingOther) {
+    setInvestigations((prev) => prev.map((inv) => (
+      inv.id === invId ? { ...inv, finding, findingOther } : inv
+    )))
+    logAudit(invId, 'Finding recorded')
+  }
+
+  function resolveInvestigation(invId, resolutionNotes) {
+    const inv = investigations.find((i) => i.id === invId)
+    if (!inv || !inv.finding || !resolutionNotes.trim()) return
+    const date = formatNow()
+    setInvestigations((prev) => prev.map((i) => (
+      i.id === invId
+        ? { ...i, status: 'Resolved', resolutionNotes: resolutionNotes.trim(), resolvedById: currentUser.id, resolvedAt: date }
+        : i
+    )))
+    updateAlertStatus(inv.alertId, 'Resolved')
+    logAudit(invId, 'Investigation resolved')
+  }
+
+  function closeInvestigation(invId) {
+    setInvestigations((prev) => prev.map((i) => (
+      i.id === invId && i.status === 'Resolved' ? { ...i, status: 'Closed' } : i
+    )))
+    logAudit(invId, 'Investigation closed')
+  }
+
+  const openInvestigationCount = investigations.filter(
+    (i) => i.status === 'Open' || i.status === 'Under Investigation',
+  ).length
+
   let content = null
   if (page === 'Dashboard') {
     content = (
@@ -64,6 +174,7 @@ function App() {
         products={productList}
         transactions={txnList}
         alerts={alerts}
+        openInvestigationCount={openInvestigationCount}
         onNavigate={setPage}
         onReviewAlert={openAlert}
       />
@@ -92,12 +203,33 @@ function App() {
         selectedId={selectedAlertId}
         onSelect={setSelectedAlertId}
         onStatusChange={updateAlertStatus}
+        investigations={investigations}
+        onStartInvestigation={startInvestigation}
+        onOpenInvestigation={openInvestigation}
       />
     )
   } else if (page === 'Investigations') {
-    content = <PlaceholderPage title="Investigations" description="Investigations are not part of Stage 3." stageNote="Investigations arrive in Stage 4." />
+    content = (
+      <Investigations
+        investigations={investigations}
+        alerts={alerts}
+        products={productList}
+        transactions={txnList}
+        users={users}
+        currentUser={currentUser}
+        selectedId={selectedInvestigationId}
+        onSelect={setSelectedInvestigationId}
+        onAddNote={addNote}
+        onAssignInvestigator={assignInvestigator}
+        onRecordFinding={recordFinding}
+        onResolve={resolveInvestigation}
+        onClose={closeInvestigation}
+        onOpenAlert={openAlert}
+        auditLog={auditLog}
+      />
+    )
   } else if (page === 'AI Assistant') {
-    content = <PlaceholderPage title="AI Assistant" description="Mock AI help is not part of Stage 3." stageNote="AI Assistant arrives in Stage 5." />
+    content = <PlaceholderPage title="AI Assistant" description="Mock AI help is not part of Stage 4." stageNote="AI Assistant arrives in Stage 5." />
   }
 
   return (

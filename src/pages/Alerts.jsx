@@ -5,7 +5,7 @@ import { useState } from 'react'
 const SEVERITIES = ['all', 'Low', 'Medium', 'High', 'Critical']
 const STATUSES = ['all', 'New', 'Under Review', 'Investigating', 'Resolved', 'Dismissed']
 
-function Alerts({ alerts, products, transactions, users, selectedId, onSelect, onStatusChange }) {
+function Alerts({ alerts, products, transactions, users, selectedId, onSelect, onStatusChange, investigations, onStartInvestigation, onOpenInvestigation }) {
   const [severity, setSeverity] = useState('all')
   const [status, setStatus] = useState('all')
   const [type, setType] = useState('all')
@@ -23,6 +23,10 @@ function Alerts({ alerts, products, transactions, users, selectedId, onSelect, o
   })
 
   const selected = alerts.find((a) => a.id === selectedId) || null
+  const existingInvestigation = selected
+    ? investigations.find((i) => i.alertId === selected.id && i.status !== 'Closed') || null
+    : null
+  const canStart = selected && (selected.status === 'New' || selected.status === 'Under Review')
 
   return (
     <div className="grid">
@@ -112,7 +116,15 @@ function Alerts({ alerts, products, transactions, users, selectedId, onSelect, o
               <button className="secondary-btn" onClick={() => onStatusChange(selected.id, 'Resolved')}>Resolve</button>
               <button className="secondary-btn" onClick={() => onStatusChange(selected.id, 'Dismissed')}>Dismiss</button>
             </div>
-            <p className="muted">Starting an investigation arrives in Stage 4.</p>
+            <div className="form-row">
+              {existingInvestigation ? (
+                <button className="secondary-btn" onClick={() => onOpenInvestigation(existingInvestigation.id)}>Open investigation</button>
+              ) : canStart ? (
+                <button className="secondary-btn" onClick={() => onStartInvestigation(selected.id)}>Start investigation</button>
+              ) : (
+                <p className="muted">Investigations start from New, Under Review, or Investigating alerts.</p>
+              )}
+            </div>
           </div>
         )}
       </div>

@@ -94,6 +94,26 @@ body {
   background: #fff;
 }
 
+.form textarea {
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+.note-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.75rem 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.note-list li {
+  border-left: 3px solid var(--primary);
+  padding-left: 0.6rem;
+}
+
 .form-row {
   display: flex;
   gap: 0.5rem;

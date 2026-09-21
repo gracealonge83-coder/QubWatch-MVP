@@ -1,7 +1,7 @@
 // Dashboard with Stage 2 KPIs plus a Stage 3 attention card.
 // Attention card lists rule-based alerts for review. No auto-decisions.
 
-function Dashboard({ business, user, users, products, transactions, alerts, onNavigate, onReviewAlert }) {
+function Dashboard({ business, user, users, products, transactions, alerts, openInvestigationCount, onNavigate, onReviewAlert }) {
   const today = new Date().toLocaleDateString()
   const productById = Object.fromEntries(products.map((p) => [p.id, p]))
   const userById = Object.fromEntries(users.map((u) => [u.id, u]))
@@ -71,6 +71,8 @@ function Dashboard({ business, user, users, products, transactions, alerts, onNa
             </ul>
           )}
           <button className="secondary-btn" onClick={() => onNavigate('Alerts')}>Open alerts</button>
+          <p className="muted">Open investigations: {openInvestigationCount}</p>
+          <button className="secondary-btn" onClick={() => onNavigate('Investigations')}>Open investigations</button>
         </div>
       </div>
 
