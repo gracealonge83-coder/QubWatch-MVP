@@ -206,6 +206,19 @@ th, td {
   outline: 2px solid var(--primary);
 }
 
+.ai-disclaimer {
+  background: #fefce8;
+  border: 1px solid #facc15;
+  border-radius: 6px;
+  padding: 0.6rem;
+}
+
+.ai-section {
+  border-top: 1px solid var(--border);
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+}
+
 .primary-btn {
   background: var(--primary);
   color: #fff;

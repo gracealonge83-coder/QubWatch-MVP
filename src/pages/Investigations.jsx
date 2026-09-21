@@ -18,7 +18,7 @@ const FINDINGS = [
 function Investigations({
   investigations, alerts, products, transactions, users, currentUser,
   selectedId, onSelect, onAddNote, onAssignInvestigator, onRecordFinding,
-  onResolve, onClose, onOpenAlert, auditLog,
+  onResolve, onClose, onOpenAlert, onAskAiAboutInvestigation, auditLog,
 }) {
   const [statusFilter, setStatusFilter] = useState('all')
 
@@ -82,6 +82,7 @@ function Investigations({
             onResolve={onResolve}
             onClose={onClose}
             onOpenAlert={onOpenAlert}
+            onAskAiAboutInvestigation={onAskAiAboutInvestigation}
           />
         )}
       </div>
@@ -92,7 +93,7 @@ function Investigations({
 function InvestigationDetail({
   investigation, alert, products, transactions, users, currentUser,
   auditLog, onAddNote, onAssignInvestigator, onRecordFinding,
-  onResolve, onClose, onOpenAlert,
+  onResolve, onClose, onOpenAlert, onAskAiAboutInvestigation,
 }) {
   const [noteContent, setNoteContent] = useState('')
   const [findingChoice, setFindingChoice] = useState(investigation.finding || '')
@@ -137,6 +138,9 @@ function InvestigationDetail({
       {alert && (
         <button className="secondary-btn" onClick={() => onOpenAlert(alert.id)}>View alert</button>
       )}
+      <div className="form-row">
+        <button className="secondary-btn" onClick={() => onAskAiAboutInvestigation(investigation.id)}>Ask AI about this investigation</button>
+      </div>
       <p>
         Investigator:{' '}
         <select

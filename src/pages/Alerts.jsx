@@ -5,7 +5,7 @@ import { useState } from 'react'
 const SEVERITIES = ['all', 'Low', 'Medium', 'High', 'Critical']
 const STATUSES = ['all', 'New', 'Under Review', 'Investigating', 'Resolved', 'Dismissed']
 
-function Alerts({ alerts, products, transactions, users, selectedId, onSelect, onStatusChange, investigations, onStartInvestigation, onOpenInvestigation }) {
+function Alerts({ alerts, products, transactions, users, selectedId, onSelect, onStatusChange, investigations, onStartInvestigation, onOpenInvestigation, onAskAiAboutAlert }) {
   const [severity, setSeverity] = useState('all')
   const [status, setStatus] = useState('all')
   const [type, setType] = useState('all')
@@ -124,6 +124,9 @@ function Alerts({ alerts, products, transactions, users, selectedId, onSelect, o
               ) : (
                 <p className="muted">Investigations start from New, Under Review, or Investigating alerts.</p>
               )}
+            </div>
+            <div className="form-row">
+              <button className="secondary-btn" onClick={() => onAskAiAboutAlert(selected.id)}>Ask AI about this alert</button>
             </div>
           </div>
         )}

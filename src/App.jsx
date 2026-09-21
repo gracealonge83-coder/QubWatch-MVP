@@ -6,7 +6,7 @@ import Products from './pages/Products.jsx'
 import Transactions from './pages/Transactions.jsx'
 import Alerts from './pages/Alerts.jsx'
 import Investigations from './pages/Investigations.jsx'
-import PlaceholderPage from './pages/PlaceholderPage.jsx'
+import AiAssistant from './pages/AiAssistant.jsx'
 import { evaluateRules } from './monitoring/rules.js'
 import { business as initialBusiness, users, products as seedProducts, transactions as seedTransactions } from './data/mockData.js'
 
@@ -29,6 +29,7 @@ function App() {
   const [investigations, setInvestigations] = useState([])
   const [selectedInvestigationId, setSelectedInvestigationId] = useState(null)
   const [auditLog, setAuditLog] = useState([])
+  const [aiContext, setAiContext] = useState({ type: 'overview', id: null })
   const currentUser = users[0]
 
   function addProduct(data) {
@@ -107,6 +108,16 @@ function App() {
   function openInvestigation(id) {
     setSelectedInvestigationId(id)
     setPage('Investigations')
+  }
+
+  function askAiAboutAlert(id) {
+    setAiContext({ type: 'alert', id })
+    setPage('AI Assistant')
+  }
+
+  function askAiAboutInvestigation(id) {
+    setAiContext({ type: 'investigation', id })
+    setPage('AI Assistant')
   }
 
   function addNote(invId, content) {
@@ -206,6 +217,7 @@ function App() {
         investigations={investigations}
         onStartInvestigation={startInvestigation}
         onOpenInvestigation={openInvestigation}
+        onAskAiAboutAlert={askAiAboutAlert}
       />
     )
   } else if (page === 'Investigations') {
@@ -225,11 +237,25 @@ function App() {
         onResolve={resolveInvestigation}
         onClose={closeInvestigation}
         onOpenAlert={openAlert}
+        onAskAiAboutInvestigation={askAiAboutInvestigation}
         auditLog={auditLog}
       />
     )
   } else if (page === 'AI Assistant') {
-    content = <PlaceholderPage title="AI Assistant" description="Mock AI help is not part of Stage 4." stageNote="AI Assistant arrives in Stage 5." />
+    content = (
+      <AiAssistant
+        key={`${aiContext.type}-${aiContext.id || 'none'}`}
+        business={biz}
+        alerts={alerts}
+        investigations={investigations}
+        products={productList}
+        transactions={txnList}
+        users={users}
+        initialContext={aiContext}
+        onOpenAlert={openAlert}
+        onOpenInvestigation={openInvestigation}
+      />
+    )
   }
 
   return (
