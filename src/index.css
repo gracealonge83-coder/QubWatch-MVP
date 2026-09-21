@@ -235,9 +235,71 @@ th, td {
   color: var(--muted);
 }
 
+/* Stage 6 header controls + mobile bottom navigation. */
+.header-side {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bell-btn {
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 0.5rem 0.8rem;
+  border-radius: 999px;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.bell-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.mobile-nav {
+  display: none;
+}
+
 /* Responsive: stack on phones and tablets. */
 @media (max-width: 768px) {
   .grid { grid-template-columns: 1fr; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
   .header { flex-direction: column; align-items: flex-start; }
+  .nav { display: none; }
+  .main { padding-bottom: 5rem; }
+  .nav-btn, .secondary-btn, .primary-btn, .alert-item {
+    min-height: 44px;
+  }
+  .toolbar input,
+  .toolbar select {
+    flex: 1 1 100%;
+  }
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    gap: 0.25rem;
+    padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom));
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .tab-btn {
+    flex: 1 0 auto;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 0.7rem 0.4rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    min-height: 48px;
+    white-space: nowrap;
+  }
+  .tab-btn.active {
+    background: var(--primary);
+    color: #fff;
+  }
 }

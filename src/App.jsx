@@ -7,6 +7,7 @@ import Transactions from './pages/Transactions.jsx'
 import Alerts from './pages/Alerts.jsx'
 import Investigations from './pages/Investigations.jsx'
 import AiAssistant from './pages/AiAssistant.jsx'
+import Notifications from './pages/Notifications.jsx'
 import { evaluateRules } from './monitoring/rules.js'
 import { business as initialBusiness, users, products as seedProducts, transactions as seedTransactions } from './data/mockData.js'
 
@@ -256,10 +257,25 @@ function App() {
         onOpenInvestigation={openInvestigation}
       />
     )
+  } else if (page === 'Notifications') {
+    content = (
+      <Notifications
+        alerts={alerts}
+        investigations={investigations}
+        onOpenAlert={openAlert}
+        onOpenInvestigation={openInvestigation}
+      />
+    )
   }
 
   return (
-    <Layout currentPage={page} onNavigate={setPage} businessName={biz.name}>
+    <Layout
+      currentPage={page}
+      onNavigate={setPage}
+      businessName={biz.name}
+      notificationCount={alerts.filter((a) => a.status === 'New' || a.status === 'Under Review').length}
+      onOpenNotifications={() => setPage('Notifications')}
+    >
       {content}
     </Layout>
   )
