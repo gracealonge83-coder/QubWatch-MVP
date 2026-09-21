@@ -1,9 +1,9 @@
-// Stage 1 mock data — Demo Supermart (PRD Section 36 + 37).
+// Stage 1 mock data — Caring Supermart (PRD Section 36 + 37).
 // In-memory only. No database, no monitoring rules, no AI.
 
 export const business = {
   id: 'biz-001',
-  name: 'Demo Supermart',
+  name: 'Caring Supermart',
   type: 'Supermarket',
   location: 'Lagos, Nigeria',
   owner: 'Adaeze Okafor',
