@@ -37,7 +37,7 @@ function Layout({ currentPage, onNavigate, businessName, children }) {
       <main className="main">{children}</main>
 
       <footer className="footer">
-        <p>QubWatch MVP — Stage 1 foundation. AI assists. Humans decide. Alerts are for review only.</p>
+        <p>QubWatch — Giving you smarter eyes.</p>
       </footer>
     </div>
   )
