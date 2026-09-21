@@ -1,0 +1,53 @@
+import { useState } from 'react'
+
+// Simple business setup form (PRD Section 12).
+// Edits in-memory business only. No database.
+function BusinessSetup({ business, onSave }) {
+  const [form, setForm] = useState({ ...business })
+
+  function handleChange(event) {
+    const { name, value } = event.target
+    setForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault()
+    onSave(form)
+  }
+
+  return (
+    <div className="card">
+      <h2>Business Setup</h2>
+      <p className="muted">Simple setup form for Stage 1. Changes stay in memory.</p>
+      <form onSubmit={handleSubmit} className="form">
+        <label>
+          Business name
+          <input name="name" value={form.name} onChange={handleChange} />
+        </label>
+        <label>
+          Business type
+          <input name="type" value={form.type} onChange={handleChange} />
+        </label>
+        <label>
+          Location
+          <input name="location" value={form.location} onChange={handleChange} />
+        </label>
+        <label>
+          Owner
+          <input name="owner" value={form.owner} onChange={handleChange} />
+        </label>
+        <label>
+          Contact
+          <input name="contact" value={form.contact} onChange={handleChange} />
+        </label>
+        <label>
+          Operating hours
+          <input name="hours" value={form.hours} onChange={handleChange} />
+        </label>
+        <button type="submit" className="primary-btn">Save business</button>
+      </form>
+    </div>
+  )
+}
+
+export default BusinessSetup
