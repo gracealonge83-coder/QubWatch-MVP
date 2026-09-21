@@ -1,7 +1,7 @@
-// Dashboard with Stage 2 KPIs (PRD Section 13, without alert monitoring).
-// KPIs are plain totals from transaction data. No monitoring rules here.
+// Dashboard with Stage 2 KPIs plus a Stage 3 attention card.
+// Attention card lists rule-based alerts for review. No auto-decisions.
 
-function Dashboard({ business, user, users, products, transactions, onNavigate }) {
+function Dashboard({ business, user, users, products, transactions, alerts, onNavigate, onReviewAlert }) {
   const today = new Date().toLocaleDateString()
   const productById = Object.fromEntries(products.map((p) => [p.id, p]))
   const userById = Object.fromEntries(users.map((u) => [u.id, u]))
@@ -14,6 +14,7 @@ function Dashboard({ business, user, users, products, transactions, onNavigate }
   const discountTotal = discounts.reduce((sum, t) => sum + t.amount, 0)
   const inventoryIssues = products.filter((p) => p.stock !== p.expectedStock).length
 
+  const openAlerts = alerts.filter((a) => a.status === 'New' || a.status === 'Under Review')
   const recent = [...transactions].slice(-6).reverse()
 
   return (
@@ -35,9 +36,9 @@ function Dashboard({ business, user, users, products, transactions, onNavigate }
           <p className="muted">{discounts.length} discounted</p>
         </div>
         <div className="card kpi">
-          <h3>Inventory</h3>
-          <p className="kpi-value">{inventoryIssues}</p>
-          <p className="muted">mismatches</p>
+          <h3>Open alerts</h3>
+          <p className="kpi-value">{openAlerts.length}</p>
+          <p className="muted">need review</p>
         </div>
       </div>
 
@@ -55,6 +56,26 @@ function Dashboard({ business, user, users, products, transactions, onNavigate }
         </div>
 
         <div className="card">
+          <h2>Needs attention</h2>
+          {openAlerts.length === 0 ? (
+            <p className="muted">No alerts need review right now.</p>
+          ) : (
+            <ul>
+              {openAlerts.slice(0, 3).map((a) => (
+                <li key={a.id}>
+                  <span className={`badge badge-${a.severity.toLowerCase()}`}>{a.severity}</span>
+                  {' '}{a.type}{' '}
+                  <button className="secondary-btn" onClick={() => onReviewAlert(a.id)}>Review</button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button className="secondary-btn" onClick={() => onNavigate('Alerts')}>Open alerts</button>
+        </div>
+      </div>
+
+      <div className="grid" style={{ marginTop: '1rem' }}>
+        <div className="card">
           <h2>Recent activity</h2>
           <ul>
             {recent.map((t) => (
@@ -63,7 +84,12 @@ function Dashboard({ business, user, users, products, transactions, onNavigate }
               </li>
             ))}
           </ul>
-          <p className="muted">Alert monitoring arrives in Stage 3.</p>
+        </div>
+
+        <div className="card">
+          <h2>Inventory</h2>
+          <p className="muted">{inventoryIssues} product(s) differ from expected stock.</p>
+          <button className="secondary-btn" onClick={() => onNavigate('Products')}>View products</button>
         </div>
       </div>
     </div>

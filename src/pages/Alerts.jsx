@@ -1,0 +1,123 @@
+import { useState } from 'react'
+
+// Stage 3 alert review (PRD Sections 18-21 + 31). Review only.
+// No investigations, no automated decisions. "Start investigation" arrives in Stage 4.
+const SEVERITIES = ['all', 'Low', 'Medium', 'High', 'Critical']
+const STATUSES = ['all', 'New', 'Under Review', 'Investigating', 'Resolved', 'Dismissed']
+
+function Alerts({ alerts, products, transactions, users, selectedId, onSelect, onStatusChange }) {
+  const [severity, setSeverity] = useState('all')
+  const [status, setStatus] = useState('all')
+  const [type, setType] = useState('all')
+
+  const types = ['all', ...new Set(alerts.map((a) => a.type))]
+  const productById = Object.fromEntries(products.map((p) => [p.id, p]))
+  const txnById = Object.fromEntries(transactions.map((t) => [t.id, t]))
+  const userById = Object.fromEntries(users.map((u) => [u.id, u]))
+
+  const visible = alerts.filter((a) => {
+    if (severity !== 'all' && a.severity !== severity) return false
+    if (status !== 'all' && a.status !== status) return false
+    if (type !== 'all' && a.type !== type) return false
+    return true
+  })
+
+  const selected = alerts.find((a) => a.id === selectedId) || null
+
+  return (
+    <div className="grid">
+      <div className="card">
+        <h2>Alerts ({visible.length})</h2>
+        <p className="muted">Signals for review. Not proof of wrongdoing.</p>
+        <div className="toolbar">
+          <select value={severity} onChange={(e) => setSeverity(e.target.value)}>
+            {SEVERITIES.map((s) => (
+              <option key={s} value={s}>{s === 'all' ? 'All severities' : s}</option>
+            ))}
+          </select>
+          <select value={status} onChange={(e) => setStatus(e.target.value)}>
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>{s === 'all' ? 'All statuses' : s}</option>
+            ))}
+          </select>
+          <select value={type} onChange={(e) => setType(e.target.value)}>
+            {types.map((t) => (
+              <option key={t} value={t}>{t === 'all' ? 'All types' : t}</option>
+            ))}
+          </select>
+        </div>
+        {visible.length === 0 ? (
+          <p className="muted">No alerts match.</p>
+        ) : (
+          <ul className="alert-list">
+            {visible.map((a) => (
+              <li key={a.id}>
+                <button
+                  className={a.id === selectedId ? 'alert-item selected' : 'alert-item'}
+                  onClick={() => onSelect(a.id)}
+                >
+                  <span className={`badge badge-${a.severity.toLowerCase()}`}>{a.severity}</span>
+                  <span> {a.type} — {a.status}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="card">
+        <h2>Alert review</h2>
+        {!selected ? (
+          <p className="muted">Select an alert to review it.</p>
+        ) : (
+          <div>
+            <p><strong>{selected.type}</strong></p>
+            <p>Severity: <span className={`badge badge-${selected.severity.toLowerCase()}`}>{selected.severity}</span></p>
+            <p>Date: {selected.date}</p>
+            <p>Reason: {selected.message}</p>
+            <p>Status: {selected.status}</p>
+
+            {selected.relatedTransactionIds.length > 0 && (
+              <div>
+                <h3>Related transactions</h3>
+                <ul>
+                  {selected.relatedTransactionIds.map((id) => {
+                    const t = txnById[id]
+                    if (!t) return <li key={id}>{id}</li>
+                    return (
+                      <li key={id}>
+                        {t.date} — {t.type} — {productById[t.productId] ? productById[t.productId].name : t.productId} — ₦{t.amount.toLocaleString()} ({userById[t.staffId] ? userById[t.staffId].name : t.staffId})
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            )}
+
+            {selected.relatedProductIds.length > 0 && (
+              <div>
+                <h3>Related products</h3>
+                <ul>
+                  {selected.relatedProductIds.map((id) => {
+                    const p = productById[id]
+                    if (!p) return <li key={id}>{id}</li>
+                    return <li key={id}>{p.name} — ₦{p.price.toLocaleString()} (stock {p.stock})</li>
+                  })}
+                </ul>
+              </div>
+            )}
+
+            <div className="form-row">
+              <button className="secondary-btn" onClick={() => onStatusChange(selected.id, 'Under Review')}>Review</button>
+              <button className="secondary-btn" onClick={() => onStatusChange(selected.id, 'Resolved')}>Resolve</button>
+              <button className="secondary-btn" onClick={() => onStatusChange(selected.id, 'Dismissed')}>Dismiss</button>
+            </div>
+            <p className="muted">Starting an investigation arrives in Stage 4.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default Alerts

@@ -149,6 +149,43 @@ th, td {
   cursor: pointer;
 }
 
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.badge-low { background: #64748b; }
+.badge-medium { background: #d97706; }
+.badge-high { background: #dc2626; }
+.badge-critical { background: #7f1d1d; }
+
+.alert-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.alert-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.alert-item.selected {
+  border-color: var(--primary);
+  outline: 2px solid var(--primary);
+}
+
 .primary-btn {
   background: var(--primary);
   color: #fff;
