@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { formatDateTime } from '../utils/formatDateTime.js'
 
 // Stage 3 alert review (PRD Sections 18-21 + 31). Review only.
 // No investigations, no automated decisions. "Start investigation" arrives in Stage 4.
@@ -77,7 +78,7 @@ function Alerts({ alerts, products, transactions, users, selectedId, onSelect, o
           <div>
             <p><strong>{selected.type}</strong></p>
             <p>Severity: <span className={`badge badge-${selected.severity.toLowerCase()}`}>{selected.severity}</span></p>
-            <p>Date: {selected.date}</p>
+            <p>Date: {formatDateTime(selected.date)}</p>
             <p>Reason: {selected.message}</p>
             <p>Status: {selected.status}</p>
 
@@ -90,7 +91,7 @@ function Alerts({ alerts, products, transactions, users, selectedId, onSelect, o
                     if (!t) return <li key={id}>{id}</li>
                     return (
                       <li key={id}>
-                        {t.date} — {t.type} — {productById[t.productId] ? productById[t.productId].name : t.productId} — ₦{t.amount.toLocaleString()} ({userById[t.staffId] ? userById[t.staffId].name : t.staffId})
+                        {formatDateTime(t.date)} — {t.type} — {productById[t.productId] ? productById[t.productId].name : t.productId} — ₦{t.amount.toLocaleString()} ({userById[t.staffId] ? userById[t.staffId].name : t.staffId})
                       </li>
                     )
                   })}

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { formatDateTime } from '../utils/formatDateTime.js'
 
 // Stage 4 investigations (PRD Sections 22-27 + 32). Human review only.
 // No AI, no automation: the user records every note, finding, and resolution.
@@ -154,8 +155,8 @@ function InvestigationDetail({
         </select>
       </p>
       <p>Status: {investigation.status}</p>
-      <p>Opened: {investigation.createdAt}{investigator ? ` by ${investigator.name}` : ''}</p>
-      {investigation.resolvedAt && <p>Resolved: {investigation.resolvedAt}</p>}
+      <p>Opened: {formatDateTime(investigation.createdAt)}{investigator ? ` by ${investigator.name}` : ''}</p>
+      {investigation.resolvedAt && <p>Resolved: {formatDateTime(investigation.resolvedAt)}</p>}
 
       <h3>Evidence (read-only business records)</h3>
       {evidenceTxns.length === 0 && evidenceProducts.length === 0 ? (
@@ -166,7 +167,7 @@ function InvestigationDetail({
             <ul>
               {evidenceTxns.map((t) => (
                 <li key={t.id}>
-                  {t.date} — {t.type} — {productById[t.productId] ? productById[t.productId].name : t.productId} — qty {t.quantity} — ₦{t.amount.toLocaleString()} — discount {t.discount}% — {userById[t.staffId] ? userById[t.staffId].name : t.staffId}
+                  {formatDateTime(t.date)} — {t.type} — {productById[t.productId] ? productById[t.productId].name : t.productId} — qty {t.quantity} — ₦{t.amount.toLocaleString()} — discount {t.discount}% — {userById[t.staffId] ? userById[t.staffId].name : t.staffId}
                 </li>
               ))}
             </ul>
@@ -190,7 +191,7 @@ function InvestigationDetail({
         <ul className="note-list">
           {investigation.notes.map((n) => (
             <li key={n.id}>
-              {n.date} — {userById[n.authorId] ? userById[n.authorId].name : n.authorId}: {n.content}
+              {formatDateTime(n.date)} — {userById[n.authorId] ? userById[n.authorId].name : n.authorId}: {n.content}
             </li>
           ))}
         </ul>
@@ -239,7 +240,7 @@ function InvestigationDetail({
         <div>
           <p>Finding: {investigation.finding}{investigation.finding === 'Other' ? ` — ${investigation.findingOther}` : ''}</p>
           <p>Notes: {investigation.resolutionNotes}</p>
-          <p>Resolved by: {userById[investigation.resolvedById] ? userById[investigation.resolvedById].name : ''} on {investigation.resolvedAt}</p>
+          <p>Resolved by: {userById[investigation.resolvedById] ? userById[investigation.resolvedById].name : ''} on {formatDateTime(investigation.resolvedAt)}</p>
           <p>Final status: {investigation.status}</p>
           {investigation.status === 'Resolved' && (
             <button className="secondary-btn" onClick={() => onClose(investigation.id)}>Close investigation</button>
@@ -265,7 +266,7 @@ function InvestigationDetail({
         <ul className="note-list">
           {auditLog.map((e) => (
             <li key={e.id}>
-              {e.date} — {userById[e.userId] ? userById[e.userId].name : e.userId}: {e.action}
+              {formatDateTime(e.date)} — {userById[e.userId] ? userById[e.userId].name : e.userId}: {e.action}
             </li>
           ))}
         </ul>

@@ -1,8 +1,9 @@
 // Dashboard with Stage 2 KPIs plus a Stage 3 attention card.
 // Attention card lists rule-based alerts for review. No auto-decisions.
+import { formatDateTime } from '../utils/formatDateTime.js'
 
 function Dashboard({ business, user, users, products, transactions, alerts, openInvestigationCount, onNavigate, onReviewAlert }) {
-  const today = new Date().toLocaleDateString()
+  const today = formatDateTime(new Date())
   const productById = Object.fromEntries(products.map((p) => [p.id, p]))
   const userById = Object.fromEntries(users.map((u) => [u.id, u]))
 
@@ -82,7 +83,7 @@ function Dashboard({ business, user, users, products, transactions, alerts, open
           <ul>
             {recent.map((t) => (
               <li key={t.id}>
-                {t.date} — {t.type} — {productById[t.productId] ? productById[t.productId].name : t.productId} — ₦{t.amount.toLocaleString()} ({userById[t.staffId] ? userById[t.staffId].name : t.staffId})
+                {formatDateTime(t.date)} — {t.type} — {productById[t.productId] ? productById[t.productId].name : t.productId} — ₦{t.amount.toLocaleString()} ({userById[t.staffId] ? userById[t.staffId].name : t.staffId})
               </li>
             ))}
           </ul>

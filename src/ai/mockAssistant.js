@@ -3,6 +3,7 @@
 // No external API, SDK, backend, or database. Nothing here records findings,
 // resolves investigations, or judges staff.
 import { DEMO_THRESHOLDS } from '../monitoring/rules.js'
+import { formatDateTime } from '../utils/formatDateTime.js'
 
 export const FAIRNESS_NOTE =
   'An alert is a signal for review. It does not prove fraud, theft, wrongdoing, or business loss.'
@@ -19,7 +20,7 @@ export const STARTER_QUESTIONS = [
 function txnLine(t, productById, userById) {
   const product = productById[t.productId]
   const staff = userById[t.staffId]
-  return `${t.date} — ${t.type} — ${product ? product.name : t.productId} — qty ${t.quantity} — ₦${t.amount.toLocaleString()} — discount ${t.discount}% — ${staff ? staff.name : t.staffId}`
+  return `${formatDateTime(t.date)} — ${t.type} — ${product ? product.name : t.productId} — qty ${t.quantity} — ₦${t.amount.toLocaleString()} — discount ${t.discount}% — ${staff ? staff.name : t.staffId}`
 }
 
 function ruleLine(alert) {
@@ -48,7 +49,7 @@ function summarizeAlert(alert, ctx) {
   return {
     title: `Summary: ${alert.type}`,
     knownInformation: [
-      `Alert: ${alert.type} — severity ${alert.severity} — status ${alert.status} — ${alert.date}.`,
+      `Alert: ${alert.type} — severity ${alert.severity} — status ${alert.status} — ${formatDateTime(alert.date)}.`,
       `Reason recorded by the monitor: ${alert.message}`,
       ...txns.map((t) => txnLine(t, ctx.productById, ctx.userById)),
       ...(products.length > 0 ? [`Products involved: ${products.map((p) => `${p.name} (₦${p.price.toLocaleString()}, stock ${p.stock})`).join('; ')}.`] : []),
@@ -128,11 +129,11 @@ export function briefInvestigation(investigation, alert, ctx) {
   return {
     title: `Investigation brief: ${investigation.id}`,
     knownInformation: [
-      `Status: ${investigation.status} — opened ${investigation.createdAt}${staff ? ` — investigator ${staff.name}` : ''}.`,
+      `Status: ${investigation.status} — opened ${formatDateTime(investigation.createdAt)}${staff ? ` — investigator ${staff.name}` : ''}.`,
       alert ? `Linked alert: ${alert.type} — ${alert.severity} — ${alert.status}. ${alert.message}` : `Linked alert record: ${investigation.alertType} (${investigation.alertSeverity}).`,
       `Notes recorded: ${investigation.notes.length}. Finding recorded: ${investigation.finding || 'none yet'}.`,
       ...(investigation.status === 'Resolved' || investigation.status === 'Closed'
-        ? [`Resolution notes: ${investigation.resolutionNotes} (resolved ${investigation.resolvedAt}).`]
+        ? [`Resolution notes: ${investigation.resolutionNotes} (resolved ${formatDateTime(investigation.resolvedAt)}).`]
         : []),
     ],
     analysis: [
