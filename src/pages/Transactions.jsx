@@ -8,6 +8,7 @@ function Transactions({ transactions, products, users, currentUser, onAdd }) {
   const [form, setForm] = useState({
     productId: products[0] ? products[0].id : '',
     type: 'sale',
+    staffId: currentUser ? currentUser.id : '',
     quantity: '1',
     discount: '0',
   })
@@ -36,7 +37,7 @@ function Transactions({ transactions, products, users, currentUser, onAdd }) {
       productId: form.productId,
       quantity,
       amount: previewAmount,
-      staffId: currentUser.id,
+      staffId: form.staffId || currentUser.id,
       discount: discountPct,
     })
     setForm((prev) => ({ ...prev, quantity: '1', discount: '0' }))
@@ -69,6 +70,14 @@ function Transactions({ transactions, products, users, currentUser, onAdd }) {
               <option value="sale">Sale</option>
               <option value="refund">Refund</option>
               <option value="discount">Discount</option>
+            </select>
+          </label>
+          <label>
+            Recorded by
+            <select name="staffId" value={form.staffId} onChange={handleChange}>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>{u.name} — {u.role}</option>
+              ))}
             </select>
           </label>
           <label>

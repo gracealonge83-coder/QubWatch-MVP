@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Layout from './components/Layout.jsx'
-import BusinessSetup from './components/BusinessSetup.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import Settings from './pages/Settings.jsx'
 import Products from './pages/Products.jsx'
 import Transactions from './pages/Transactions.jsx'
 import Alerts from './pages/Alerts.jsx'
@@ -9,7 +9,8 @@ import Investigations from './pages/Investigations.jsx'
 import AiAssistant from './pages/AiAssistant.jsx'
 import Notifications from './pages/Notifications.jsx'
 import { evaluateRules } from './monitoring/rules.js'
-import { business as initialBusiness, users, products as seedProducts, transactions as seedTransactions } from './data/mockData.js'
+import { business as initialBusiness, users as seedUsers, products as seedProducts, transactions as seedTransactions } from './data/mockData.js'
+import { loadBusiness, saveBusiness, loadUsers, saveUsers } from './storage/localStore.js'
 
 // Stage 4 investigations: alert -> review -> investigation -> evidence ->
 // finding -> resolution. Human decides everything. In-memory only.
@@ -22,16 +23,27 @@ function formatNow() {
 
 function App() {
   const [page, setPage] = useState('Dashboard')
-  const [biz, setBiz] = useState(initialBusiness)
+  const [biz, setBiz] = useState(() => loadBusiness(initialBusiness))
   const [productList, setProductList] = useState(seedProducts)
   const [txnList, setTxnList] = useState(seedTransactions)
+  const [userList, setUserList] = useState(() => loadUsers(seedUsers))
   const [statusById, setStatusById] = useState({})
   const [selectedAlertId, setSelectedAlertId] = useState(null)
   const [investigations, setInvestigations] = useState([])
   const [selectedInvestigationId, setSelectedInvestigationId] = useState(null)
   const [auditLog, setAuditLog] = useState([])
   const [aiContext, setAiContext] = useState({ type: 'overview', id: null })
-  const currentUser = users[0]
+  const currentUser = userList.length > 0 ? userList[0] : seedUsers[0]
+
+  // Persist saved business + team so a page refresh keeps them
+  // on this browser/device. Running state remains the source of truth.
+  useEffect(() => {
+    saveBusiness(biz)
+  }, [biz])
+
+  useEffect(() => {
+    saveUsers(userList)
+  }, [userList])
 
   function addProduct(data) {
     const product = { id: `prod-${Date.now()}`, expectedStock: data.stock, ...data }
@@ -40,6 +52,15 @@ function App() {
 
   function updateProduct(id, updates) {
     setProductList((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)))
+  }
+
+  function addUser(data) {
+    const user = { id: `user-${Date.now()}`, businessId: biz.id, ...data }
+    setUserList((prev) => [...prev, user])
+  }
+
+  function updateUser(id, updates) {
+    setUserList((prev) => prev.map((u) => (u.id === id ? { ...u, ...updates } : u)))
   }
 
   function addTransaction(data) {
@@ -182,7 +203,7 @@ function App() {
       <Dashboard
         business={biz}
         user={currentUser}
-        users={users}
+        users={userList}
         products={productList}
         transactions={txnList}
         alerts={alerts}
@@ -192,7 +213,15 @@ function App() {
       />
     )
   } else if (page === 'Settings') {
-    content = <BusinessSetup business={biz} onSave={setBiz} />
+    content = (
+      <Settings
+        business={biz}
+        onSaveBusiness={setBiz}
+        users={userList}
+        onAddUser={addUser}
+        onUpdateUser={updateUser}
+      />
+    )
   } else if (page === 'Products') {
     content = <Products products={productList} onAdd={addProduct} onUpdate={updateProduct} />
   } else if (page === 'Transactions') {
@@ -200,7 +229,7 @@ function App() {
       <Transactions
         transactions={txnList}
         products={productList}
-        users={users}
+        users={userList}
         currentUser={currentUser}
         onAdd={addTransaction}
       />
@@ -211,7 +240,7 @@ function App() {
         alerts={alerts}
         products={productList}
         transactions={txnList}
-        users={users}
+        users={userList}
         selectedId={selectedAlertId}
         onSelect={setSelectedAlertId}
         onStatusChange={updateAlertStatus}
@@ -228,7 +257,7 @@ function App() {
         alerts={alerts}
         products={productList}
         transactions={txnList}
-        users={users}
+        users={userList}
         currentUser={currentUser}
         selectedId={selectedInvestigationId}
         onSelect={setSelectedInvestigationId}
@@ -251,7 +280,7 @@ function App() {
         investigations={investigations}
         products={productList}
         transactions={txnList}
-        users={users}
+        users={userList}
         initialContext={aiContext}
         onOpenAlert={openAlert}
         onOpenInvestigation={openInvestigation}

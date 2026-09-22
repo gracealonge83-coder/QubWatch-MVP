@@ -4,15 +4,18 @@ import { useState } from 'react'
 // Edits in-memory business only. No database.
 function BusinessSetup({ business, onSave }) {
   const [form, setForm] = useState({ ...business })
+  const [saved, setSaved] = useState(false)
 
   function handleChange(event) {
     const { name, value } = event.target
     setForm((prev) => ({ ...prev, [name]: value }))
+    setSaved(false)
   }
 
   function handleSubmit(event) {
     event.preventDefault()
     onSave(form)
+    setSaved(true)
   }
 
   return (
@@ -45,6 +48,7 @@ function BusinessSetup({ business, onSave }) {
           <input name="hours" value={form.hours} onChange={handleChange} />
         </label>
         <button type="submit" className="primary-btn">Save business</button>
+        {saved && <p role="status">Business saved successfully.</p>}
       </form>
     </div>
   )

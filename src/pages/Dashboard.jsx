@@ -47,6 +47,7 @@ function Dashboard({ business, user, users, products, transactions, alerts, open
         <div className="card">
           <h2>Business information</h2>
           <p><strong>{business.name}</strong></p>
+          <p>{business.type} — {business.location}</p>
           <p>Date: {today}</p>
           <p>User: {user.name}</p>
           <p>Role: {user.role}</p>

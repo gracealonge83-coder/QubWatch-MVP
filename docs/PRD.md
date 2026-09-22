@@ -171,6 +171,7 @@ The MVP includes:
 
 * Business setup
 * User access and basic roles
+* Team management (basic)
 * Products
 * Transactions
 * Dashboard
@@ -212,6 +213,10 @@ The following are outside the first MVP:
 * Advanced enterprise permission management
 * Complex multi-company administration
 * Advanced analytics and forecasting
+* User deletion
+* Active/inactive user status
+* Authentication and password management
+* Permission enforcement
 
 These features may be considered in later versions.
 
@@ -247,6 +252,10 @@ Basic business information may include:
 * Business operating hours
 
 The MVP may initially use a simple business setup form.
+
+The business profile remains editable through Settings after initial setup.
+Saving updates the business information, and the saved business information is reflected on the Dashboard and header where applicable.
+Saved business information persists in the browser (browser-local storage) so it remains available after page refresh and when the user reopens QubWatch in the same browser and device.
 
 ---
 
@@ -674,6 +683,31 @@ Access to functions required for assigned business activities.
 Basic administrative access.
 
 More detailed role-based permissions may be expanded in later versions.
+
+---
+
+# 33A. Team Management (MVP)
+
+The Business Owner and Authorized Manager can view team members in Settings.
+
+They can add a user with:
+
+* Name
+* One of the four roles defined in Section 33
+
+They can edit an existing user's name and role.
+
+Added and edited users are saved in browser storage and remain available after page refresh and when the user reopens QubWatch in the same browser and device.
+User references continue to resolve by user ID.
+
+This MVP persistence uses browser-local storage and in-memory application state only. It does not introduce a backend, database, cloud synchronization, authentication, or multi-device synchronization.
+
+The MVP does NOT include:
+
+* User deletion
+* Active/inactive user status
+* Authentication and password management
+* Permission enforcement
 
 ---
 
