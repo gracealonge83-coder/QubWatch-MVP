@@ -172,6 +172,7 @@ The MVP includes:
 * Business setup
 * User access and basic roles
 * Team management (basic)
+* Browser-local persistence of operational records
 * Products
 * Transactions
 * Dashboard
@@ -256,6 +257,7 @@ The MVP may initially use a simple business setup form.
 The business profile remains editable through Settings after initial setup.
 Saving updates the business information, and the saved business information is reflected on the Dashboard and header where applicable.
 Saved business information persists in the browser (browser-local storage) so it remains available after page refresh and when the user reopens QubWatch in the same browser and device.
+The same browser-local persistence model also retains operational records (products, transactions, alert statuses, investigations including notes, findings and resolutions, and audit records) on the same browser and device.
 
 ---
 
@@ -483,6 +485,11 @@ The MVP should support:
 * Under Investigation
 * Resolved
 * Closed
+
+The lifecycle remains Open → Under Investigation → Resolved → Closed, with Closed as the completed, retained investigation state.
+A completed investigation (Resolved or Closed) may be deleted by an authorized user after confirmation. Active investigations (Open or Under Investigation) cannot be deleted.
+Deleting an investigation removes its notes, finding, resolution data, and investigation-scoped audit records. It does not change or erase the linked alert's review and status history.
+No Archived status is used.
 
 ---
 

@@ -11,6 +11,11 @@ import Notifications from './pages/Notifications.jsx'
 import { evaluateRules } from './monitoring/rules.js'
 import { business as initialBusiness, users as seedUsers, products as seedProducts, transactions as seedTransactions } from './data/mockData.js'
 import { loadBusiness, saveBusiness, loadUsers, saveUsers } from './storage/localStore.js'
+import {
+  loadProducts, saveProducts, loadTransactions, saveTransactions,
+  loadAlertStatus, saveAlertStatus, loadInvestigations, saveInvestigations,
+  loadAudit, saveAudit,
+} from './storage/localStore.js'
 
 // Stage 4 investigations: alert -> review -> investigation -> evidence ->
 // finding -> resolution. Human decides everything. In-memory only.
@@ -24,14 +29,14 @@ function formatNow() {
 function App() {
   const [page, setPage] = useState('Dashboard')
   const [biz, setBiz] = useState(() => loadBusiness(initialBusiness))
-  const [productList, setProductList] = useState(seedProducts)
-  const [txnList, setTxnList] = useState(seedTransactions)
+  const [productList, setProductList] = useState(() => loadProducts(seedProducts))
+  const [txnList, setTxnList] = useState(() => loadTransactions(seedTransactions))
   const [userList, setUserList] = useState(() => loadUsers(seedUsers))
-  const [statusById, setStatusById] = useState({})
+  const [statusById, setStatusById] = useState(() => loadAlertStatus({}))
   const [selectedAlertId, setSelectedAlertId] = useState(null)
-  const [investigations, setInvestigations] = useState([])
+  const [investigations, setInvestigations] = useState(() => loadInvestigations([]))
   const [selectedInvestigationId, setSelectedInvestigationId] = useState(null)
-  const [auditLog, setAuditLog] = useState([])
+  const [auditLog, setAuditLog] = useState(() => loadAudit([]))
   const [aiContext, setAiContext] = useState({ type: 'overview', id: null })
   const currentUser = userList.length > 0 ? userList[0] : seedUsers[0]
 
@@ -44,6 +49,26 @@ function App() {
   useEffect(() => {
     saveUsers(userList)
   }, [userList])
+
+  useEffect(() => {
+    saveProducts(productList)
+  }, [productList])
+
+  useEffect(() => {
+    saveTransactions(txnList)
+  }, [txnList])
+
+  useEffect(() => {
+    saveAlertStatus(statusById)
+  }, [statusById])
+
+  useEffect(() => {
+    saveInvestigations(investigations)
+  }, [investigations])
+
+  useEffect(() => {
+    saveAudit(auditLog)
+  }, [auditLog])
 
   function addProduct(data) {
     const product = { id: `prod-${Date.now()}`, expectedStock: data.stock, ...data }
@@ -193,6 +218,17 @@ function App() {
     logAudit(invId, 'Investigation closed')
   }
 
+  function deleteInvestigation(invId) {
+    const inv = investigations.find((i) => i.id === invId)
+    // Completed only: Open and Under Investigation can never be deleted.
+    if (!inv || (inv.status !== 'Resolved' && inv.status !== 'Closed')) return
+    setInvestigations((prev) => prev.filter((i) => i.id !== invId))
+    // Drop this investigation's scoped audit records; the linked alert's
+    // review history is intentionally left untouched.
+    setAuditLog((prev) => prev.filter((e) => e.investigationId !== invId))
+    if (selectedInvestigationId === invId) setSelectedInvestigationId(null)
+  }
+
   const openInvestigationCount = investigations.filter(
     (i) => i.status === 'Open' || i.status === 'Under Investigation',
   ).length
@@ -266,6 +302,7 @@ function App() {
         onRecordFinding={recordFinding}
         onResolve={resolveInvestigation}
         onClose={closeInvestigation}
+        onDelete={deleteInvestigation}
         onOpenAlert={openAlert}
         onAskAiAboutInvestigation={askAiAboutInvestigation}
         auditLog={auditLog}

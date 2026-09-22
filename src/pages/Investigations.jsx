@@ -19,7 +19,7 @@ const FINDINGS = [
 function Investigations({
   investigations, alerts, products, transactions, users, currentUser,
   selectedId, onSelect, onAddNote, onAssignInvestigator, onRecordFinding,
-  onResolve, onClose, onOpenAlert, onAskAiAboutInvestigation, auditLog,
+  onResolve, onClose, onDelete, onOpenAlert, onAskAiAboutInvestigation, auditLog,
 }) {
   const [statusFilter, setStatusFilter] = useState('all')
 
@@ -82,6 +82,7 @@ function Investigations({
             onRecordFinding={onRecordFinding}
             onResolve={onResolve}
             onClose={onClose}
+            onDelete={onDelete}
             onOpenAlert={onOpenAlert}
             onAskAiAboutInvestigation={onAskAiAboutInvestigation}
           />
@@ -94,7 +95,7 @@ function Investigations({
 function InvestigationDetail({
   investigation, alert, products, transactions, users, currentUser,
   auditLog, onAddNote, onAssignInvestigator, onRecordFinding,
-  onResolve, onClose, onOpenAlert, onAskAiAboutInvestigation,
+  onResolve, onClose, onDelete, onOpenAlert, onAskAiAboutInvestigation,
 }) {
   const [noteContent, setNoteContent] = useState('')
   const [findingChoice, setFindingChoice] = useState(investigation.finding || '')
@@ -130,6 +131,13 @@ function InvestigationDetail({
     if (!canResolve) return
     onResolve(investigation.id, resolutionNotes.trim())
     setResolutionNotes('')
+  }
+
+  function handleDelete() {
+    const ok = window.confirm(
+      'Delete this completed investigation? This removes its details, notes, finding, resolution and activity records. This cannot be undone.',
+    )
+    if (ok) onDelete(investigation.id)
   }
 
   return (
@@ -244,6 +252,9 @@ function InvestigationDetail({
           <p>Final status: {investigation.status}</p>
           {investigation.status === 'Resolved' && (
             <button className="secondary-btn" onClick={() => onClose(investigation.id)}>Close investigation</button>
+          )}
+          {(investigation.status === 'Resolved' || investigation.status === 'Closed') && (
+            <button className="secondary-btn" onClick={handleDelete}>Delete investigation</button>
           )}
         </div>
       ) : (
