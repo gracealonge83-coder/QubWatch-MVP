@@ -30,3 +30,13 @@ export function formatDateTime(value) {
   const hour12 = hours % 12 === 0 ? 12 : hours % 12
   return `${pad(day)}/${pad(month)}/${year} ${hour12}:${pad(minutes)} ${period}`
 }
+
+// Human-readable transaction display number derived from the stored date,
+// e.g. '2026-09-22 06:11' becomes 'TXN-22092026-0611'.
+// Display only: never saved, never used as a key. Same-minute transactions
+// share a number; the internal ID stays the unique reference.
+export function txnDisplayNumber(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/.exec(String(value == null ? '' : value).trim())
+  if (!match) return String(value == null ? '' : value)
+  return `txn-${match[3]}${match[2]}${match[1]}-${match[4]}${match[5]}`
+}
