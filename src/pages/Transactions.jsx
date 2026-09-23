@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { formatDateTime } from '../utils/formatDateTime.js'
 
 // Stage 2: view + record transactions, search and filtering (PRD Sections 15 + 31).
 // In-memory only. No monitoring rules, no alert generation.
@@ -112,6 +113,7 @@ function Transactions({ transactions, products, users, currentUser, onAdd }) {
               <thead>
                 <tr>
                   <th>ID</th>
+                  <th>Date/Time</th>
                   <th>Product</th>
                   <th>Type</th>
                   <th>Amount</th>
@@ -122,6 +124,7 @@ function Transactions({ transactions, products, users, currentUser, onAdd }) {
                 {visible.map((t) => (
                   <tr key={t.id}>
                     <td>{t.id}</td>
+                    <td>{formatDateTime(t.date)}</td>
                     <td>{productById[t.productId] ? productById[t.productId].name : t.productId}</td>
                     <td>{t.type}</td>
                     <td>₦{t.amount.toLocaleString()}</td>
