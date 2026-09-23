@@ -86,7 +86,7 @@ function excessiveDiscountRule(transactions) {
       id: `discount-${t.id}`,
       type: 'High discount',
       severity: 'Medium',
-      message: `Transaction ${t.id} has a ${t.discount}% discount (demo threshold ${DEMO_THRESHOLDS.EXCESSIVE_DISCOUNT_PCT}%) and may require attention.`,
+      message: `Transaction ${t.id} has a ${t.discount}% discount (threshold ${DEMO_THRESHOLDS.EXCESSIVE_DISCOUNT_PCT}%) and may require attention.`,
       date: t.date,
       relatedTransactionIds: [t.id],
       relatedProductIds: [t.productId],

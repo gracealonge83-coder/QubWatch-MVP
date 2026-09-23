@@ -25,18 +25,18 @@ function txnLine(t, productById, userById) {
 
 function ruleLine(alert) {
   if (alert.type === 'Large transaction') {
-    return `Rule: flag transactions above ₦${DEMO_THRESHOLDS.LARGE_TRANSACTION_AMOUNT.toLocaleString()} (PRD demonstration value).`
+    return `Rule: flag transactions above ₦${DEMO_THRESHOLDS.LARGE_TRANSACTION_AMOUNT.toLocaleString()}.`
   }
   if (alert.type === 'Repeated refunds') {
-    return `Rule: flag more than ${DEMO_THRESHOLDS.REPEATED_REFUNDS_COUNT} refunds within ${DEMO_THRESHOLDS.REPEATED_REFUNDS_WINDOW_MINUTES / 60} hours (PRD demonstration values).`
+    return `Rule: flag more than ${DEMO_THRESHOLDS.REPEATED_REFUNDS_COUNT} refunds within ${DEMO_THRESHOLDS.REPEATED_REFUNDS_WINDOW_MINUTES / 60} hours.`
   }
   if (alert.type === 'High discount') {
-    return `Rule: flag discounts at or above ${DEMO_THRESHOLDS.EXCESSIVE_DISCOUNT_PCT}% (configurable demonstration value).`
+    return `Rule: flag discounts at or above ${DEMO_THRESHOLDS.EXCESSIVE_DISCOUNT_PCT}% (business threshold).`
   }
   if (alert.type === 'Unusual frequency') {
-    return `Rule: flag more than ${DEMO_THRESHOLDS.FREQUENCY_COUNT} transactions within ${DEMO_THRESHOLDS.FREQUENCY_WINDOW_MINUTES} minutes (configurable demonstration values).`
+    return `Rule: flag more than ${DEMO_THRESHOLDS.FREQUENCY_COUNT} transactions within ${DEMO_THRESHOLDS.FREQUENCY_WINDOW_MINUTES} minutes (business threshold).`
   }
-  return 'Rule: flag products whose recorded stock differs from expected stock (PRD demonstration condition).'
+  return 'Rule: flag products whose recorded stock differs from expected stock.'
 }
 
 function relatedTxns(alert, txnById) {
@@ -61,11 +61,11 @@ function summarizeAlert(alert, ctx) {
     possibleExplanations: [
       'A legitimate business reason, such as a bulk order, promotion, or busy period.',
       'A process error, such as a mistyped amount, wrong product, or unrecorded stock movement.',
-      'A question worth checking with the staff member on duty before drawing any conclusion.',
     ],
     suggestedNextSteps: [
       'Open the alert review to see the full related records.',
       'Compare the amounts and times with receipts or till records.',
+      'Check with the staff member on duty before drawing any conclusion.',
       'Start an investigation if the activity still needs a closer look.',
     ],
   }
@@ -79,7 +79,7 @@ function explainAlert(alert, ctx) {
     knownInformation: [ruleLine(alert), ...base.knownInformation],
     analysis: [
       `The monitor compared current records against the rule above and this activity met the condition.`,
-      'Rule-based flags use fixed demonstration thresholds; they do not learn or judge intent.',
+      'Rule-based flags use fixed thresholds; they support review but do not replace your judgment.',
     ],
   }
 }

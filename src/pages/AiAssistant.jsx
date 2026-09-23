@@ -63,8 +63,8 @@ function AiAssistant({
   return (
     <div className="grid">
       <div className="card">
-        <h2>AI Assistant (demo)</h2>
-        <p className="muted">Mock responses that explain business records. The assistant supports you; you decide.</p>
+        <h2>AI Assistant</h2>
+        <p className="muted">Explanations based on your business records. The assistant supports you; you decide.</p>
         <div className="form">
           <label>
             Context
@@ -73,8 +73,8 @@ function AiAssistant({
               onChange={(e) => { setContextType(e.target.value); setContextId(null); setRequest(null) }}
             >
               <option value="overview">Business overview</option>
-              <option value="alert">An alert</option>
-              <option value="investigation">An investigation</option>
+              <option value="alert">Alert</option>
+              <option value="investigation">Investigation</option>
             </select>
           </label>
           {contextType === 'alert' && (
@@ -124,9 +124,9 @@ function AiAssistant({
 
       <div className="card">
         <h2>Response</h2>
-        <p className="ai-disclaimer">Demo assistant. It explains records; it does not decide, judge staff, or prove wrongdoing.</p>
+        <p className="ai-disclaimer">This assistant explains records; it does not decide, judge staff, or prove wrongdoing.</p>
         {!response ? (
-          <p className="muted">Choose a context and a question to receive a mock response.</p>
+          <p className="muted">Choose a context and a question to receive a response.</p>
         ) : (
           <div>
             <h3>{response.title}</h3>
