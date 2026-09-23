@@ -123,7 +123,7 @@ function Alerts({ alerts, products, transactions, users, selectedId, onSelect, o
               ) : canStart ? (
                 <button className="secondary-btn" onClick={() => onStartInvestigation(selected.id)}>Start investigation</button>
               ) : (
-                <p className="muted">Investigations start from New, Under Review, or Investigating alerts.</p>
+                <p className="muted">Investigations start from New, Under Review or Investigating alerts.</p>
               )}
             </div>
             <div className="form-row">

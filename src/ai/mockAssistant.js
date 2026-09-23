@@ -6,14 +6,14 @@ import { DEMO_THRESHOLDS } from '../monitoring/rules.js'
 import { formatDateTime } from '../utils/formatDateTime.js'
 
 export const FAIRNESS_NOTE =
-  'An alert is a signal for review. It does not prove fraud, theft, wrongdoing, or business loss.'
+  'An alert is a signal for review. It does not prove fraud, theft, wrongdoing or business loss.'
 
 // Fixed neutral questions the assistant may suggest (PRD Section 28).
 export const STARTER_QUESTIONS = [
   'Who recorded the related transactions, and were they on duty at the time?',
-  'Do source documents (receipts, till records) match the recorded amounts?',
+  'Do source documents (Receipts, POS records, bank transfer records or other payment records) match the recorded amounts?',
   'Has this pattern happened before on other days?',
-  'Is there a business reason, such as a promotion, event, or bulk order?',
+  'Is there a business reason, such as a promotion, event or bulk order?',
   'What should be checked on the next visit or stock count?',
 ]
 
@@ -59,12 +59,12 @@ function summarizeAlert(alert, ctx) {
       'The figures above come directly from business records; anything beyond them is a possibility, not a fact.',
     ],
     possibleExplanations: [
-      'A legitimate business reason, such as a bulk order, promotion, or busy period.',
-      'A process error, such as a mistyped amount, wrong product, or unrecorded stock movement.',
+      'A legitimate business reason, such as a bulk order, promotion or busy period.',
+      'A process error, such as a mistyped amount, wrong product or unrecorded stock movement.',
     ],
     suggestedNextSteps: [
       'Open the alert review to see the full related records.',
-      'Compare the amounts and times with receipts or till records.',
+      'Compare the amounts and times with Receipts, POS records, bank transfer records or other payment records.',
       'Check with the staff member on duty before drawing any conclusion.',
       'Start an investigation if the activity still needs a closer look.',
     ],
@@ -167,7 +167,7 @@ export function overviewBrief(business, products, transactions, alerts, investig
       'Totals above are straight sums of the records; they hide day-to-day variation.',
     ],
     possibleExplanations: [
-      'Differences between days may reflect normal trade, promotions, or recording gaps.',
+      'Differences between days may reflect normal trade, promotions or recording gaps.',
     ],
     suggestedNextSteps: [
       'Open the Dashboard for the detailed breakdown.',

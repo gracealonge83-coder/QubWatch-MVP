@@ -124,7 +124,7 @@ function AiAssistant({
 
       <div className="card">
         <h2>Response</h2>
-        <p className="ai-disclaimer">This assistant explains records; it does not decide, judge staff, or prove wrongdoing.</p>
+        <p className="ai-disclaimer">This assistant explains records; it does not decide, judge staff or prove wrongdoing.</p>
         {!response ? (
           <p className="muted">Choose a context and a question to receive a response.</p>
         ) : (
