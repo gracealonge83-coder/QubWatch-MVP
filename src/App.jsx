@@ -8,13 +8,13 @@ import Alerts from './pages/Alerts.jsx'
 import Investigations from './pages/Investigations.jsx'
 import AiAssistant from './pages/AiAssistant.jsx'
 import Notifications from './pages/Notifications.jsx'
-import { evaluateRules } from './monitoring/rules.js'
+import { evaluateRules, DEMO_THRESHOLDS } from './monitoring/rules.js'
 import { business as initialBusiness, users as seedUsers, products as seedProducts, transactions as seedTransactions } from './data/mockData.js'
 import { loadBusiness, saveBusiness, loadUsers, saveUsers } from './storage/localStore.js'
 import {
   loadProducts, saveProducts, loadTransactions, saveTransactions,
   loadAlertStatus, saveAlertStatus, loadInvestigations, saveInvestigations,
-  loadAudit, saveAudit,
+  loadAudit, saveAudit, loadRuleConfig, saveRuleConfig,
 } from './storage/localStore.js'
 
 // Stage 4 investigations: alert -> review -> investigation -> evidence ->
@@ -37,6 +37,7 @@ function App() {
   const [investigations, setInvestigations] = useState(() => loadInvestigations([]))
   const [selectedInvestigationId, setSelectedInvestigationId] = useState(null)
   const [auditLog, setAuditLog] = useState(() => loadAudit([]))
+  const [ruleConfig, setRuleConfig] = useState(() => loadRuleConfig({ ...DEMO_THRESHOLDS }))
   const [aiContext, setAiContext] = useState({ type: 'overview', id: null })
   const currentUser = userList.length > 0 ? userList[0] : seedUsers[0]
 
@@ -70,6 +71,21 @@ function App() {
     saveAudit(auditLog)
   }, [auditLog])
 
+  useEffect(() => {
+    saveRuleConfig(ruleConfig)
+  }, [ruleConfig])
+
+  function updateRuleConfig(config) {
+    setRuleConfig(config)
+  }
+
+  function restoreDefaultRules() {
+    setRuleConfig({ ...DEMO_THRESHOLDS })
+  }
+
+  const canEditRules =
+    currentUser.role === 'Business Owner' || currentUser.role === 'Authorized Manager'
+
   function addProduct(data) {
     const product = { id: `prod-${Date.now()}`, expectedStock: data.stock, ...data }
     setProductList((prev) => [...prev, product])
@@ -94,9 +110,9 @@ function App() {
   }
 
   const alerts = useMemo(() => {
-    const base = evaluateRules(productList, txnList)
+    const base = evaluateRules(productList, txnList, ruleConfig)
     return base.map((a) => ({ ...a, status: statusById[a.id] || 'New' }))
-  }, [productList, txnList, statusById])
+  }, [productList, txnList, ruleConfig, statusById])
 
   function updateAlertStatus(id, status) {
     setStatusById((prev) => ({ ...prev, [id]: status }))
@@ -256,6 +272,10 @@ function App() {
         users={userList}
         onAddUser={addUser}
         onUpdateUser={updateUser}
+        ruleConfig={ruleConfig}
+        canEditRules={canEditRules}
+        onSaveRules={updateRuleConfig}
+        onRestoreRules={restoreDefaultRules}
       />
     )
   } else if (page === 'Products') {
@@ -319,6 +339,7 @@ function App() {
         transactions={txnList}
         users={userList}
         initialContext={aiContext}
+        thresholds={ruleConfig}
         onOpenAlert={openAlert}
         onOpenInvestigation={openInvestigation}
       />

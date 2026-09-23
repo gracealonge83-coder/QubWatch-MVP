@@ -14,7 +14,7 @@ const ALERT_QUESTIONS = [
 
 function AiAssistant({
   business, alerts, investigations, products, transactions, users,
-  initialContext, onOpenAlert, onOpenInvestigation,
+  initialContext, thresholds, onOpenAlert, onOpenInvestigation,
 }) {
   const [contextType, setContextType] = useState(initialContext.type)
   const [contextId, setContextId] = useState(initialContext.id)
@@ -23,7 +23,7 @@ function AiAssistant({
   const productById = Object.fromEntries(products.map((p) => [p.id, p]))
   const txnById = Object.fromEntries(transactions.map((t) => [t.id, t]))
   const userById = Object.fromEntries(users.map((u) => [u.id, u]))
-  const ctx = { productById, txnById, userById }
+  const ctx = { productById, txnById, userById, thresholds }
   const alertById = Object.fromEntries(alerts.map((a) => [a.id, a]))
   const invById = Object.fromEntries(investigations.map((i) => [i.id, i]))
 

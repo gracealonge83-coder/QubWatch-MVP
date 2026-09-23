@@ -11,6 +11,7 @@ const TRANSACTIONS_KEY = 'qubwatch.transactions.v1'
 const ALERT_STATUS_KEY = 'qubwatch.alertstatus.v1'
 const INVESTIGATIONS_KEY = 'qubwatch.investigations.v1'
 const AUDIT_KEY = 'qubwatch.audit.v1'
+const RULE_CONFIG_KEY = 'qubwatch.ruleconfig.v1'
 
 function readKey(key) {
   try {
@@ -177,4 +178,29 @@ export function loadAudit(fallback) {
 
 export function saveAudit(auditLog) {
   if (isAuditList(auditLog)) writeKey(AUDIT_KEY, auditLog)
+}
+
+function isRuleConfig(value) {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
+  const positiveInt = (n) => Number.isInteger(n) && n > 0
+  return (
+    typeof value.LARGE_TRANSACTION_AMOUNT === 'number' &&
+    value.LARGE_TRANSACTION_AMOUNT > 0 &&
+    positiveInt(value.REPEATED_REFUNDS_COUNT) &&
+    positiveInt(value.REPEATED_REFUNDS_WINDOW_MINUTES) &&
+    typeof value.EXCESSIVE_DISCOUNT_PCT === 'number' &&
+    value.EXCESSIVE_DISCOUNT_PCT > 0 &&
+    value.EXCESSIVE_DISCOUNT_PCT <= 100 &&
+    positiveInt(value.FREQUENCY_COUNT) &&
+    positiveInt(value.FREQUENCY_WINDOW_MINUTES)
+  )
+}
+
+export function loadRuleConfig(fallback) {
+  const saved = readKey(RULE_CONFIG_KEY)
+  return isRuleConfig(saved) ? saved : fallback
+}
+
+export function saveRuleConfig(ruleConfig) {
+  if (isRuleConfig(ruleConfig)) writeKey(RULE_CONFIG_KEY, ruleConfig)
 }

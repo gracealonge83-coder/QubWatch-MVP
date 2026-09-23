@@ -2,7 +2,6 @@
 // Deterministic templates filled with live record values only.
 // No external API, SDK, backend, or database. Nothing here records findings,
 // resolves investigations, or judges staff.
-import { DEMO_THRESHOLDS } from '../monitoring/rules.js'
 import { formatDateTime } from '../utils/formatDateTime.js'
 
 export const FAIRNESS_NOTE =
@@ -23,18 +22,18 @@ function txnLine(t, productById, userById) {
   return `${formatDateTime(t.date)} — ${t.type} — ${product ? product.name : t.productId} — qty ${t.quantity} — ₦${t.amount.toLocaleString()} — discount ${t.discount}% — ${staff ? staff.name : t.staffId}`
 }
 
-function ruleLine(alert) {
+function ruleLine(alert, thresholds) {
   if (alert.type === 'Large transaction') {
-    return `Rule: flag transactions above ₦${DEMO_THRESHOLDS.LARGE_TRANSACTION_AMOUNT.toLocaleString()}.`
+    return `Rule: flag transactions above ₦${thresholds.LARGE_TRANSACTION_AMOUNT.toLocaleString()}.`
   }
   if (alert.type === 'Repeated refunds') {
-    return `Rule: flag more than ${DEMO_THRESHOLDS.REPEATED_REFUNDS_COUNT} refunds within ${DEMO_THRESHOLDS.REPEATED_REFUNDS_WINDOW_MINUTES / 60} hours.`
+    return `Rule: flag more than ${thresholds.REPEATED_REFUNDS_COUNT} refunds within ${thresholds.REPEATED_REFUNDS_WINDOW_MINUTES / 60} hours.`
   }
   if (alert.type === 'High discount') {
-    return `Rule: flag discounts at or above ${DEMO_THRESHOLDS.EXCESSIVE_DISCOUNT_PCT}% (business threshold).`
+    return `Rule: flag discounts at or above ${thresholds.EXCESSIVE_DISCOUNT_PCT}% (business threshold).`
   }
   if (alert.type === 'Unusual frequency') {
-    return `Rule: flag more than ${DEMO_THRESHOLDS.FREQUENCY_COUNT} transactions within ${DEMO_THRESHOLDS.FREQUENCY_WINDOW_MINUTES} minutes (business threshold).`
+    return `Rule: flag more than ${thresholds.FREQUENCY_COUNT} transactions within ${thresholds.FREQUENCY_WINDOW_MINUTES} minutes (business threshold).`
   }
   return 'Rule: flag products whose recorded stock differs from expected stock.'
 }
@@ -76,7 +75,7 @@ function explainAlert(alert, ctx) {
   return {
     ...base,
     title: `Why this alert was generated: ${alert.type}`,
-    knownInformation: [ruleLine(alert), ...base.knownInformation],
+    knownInformation: [ruleLine(alert, ctx.thresholds), ...base.knownInformation],
     analysis: [
       `The monitor compared current records against the rule above and this activity met the condition.`,
       'Rule-based flags use fixed thresholds; they support review but do not replace your judgment.',

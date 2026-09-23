@@ -25,14 +25,14 @@ function parseDate(value) {
   return new Date(String(value).replace(' ', 'T')).getTime()
 }
 
-function largeTransactionRule(transactions) {
+function largeTransactionRule(transactions, thresholds = DEMO_THRESHOLDS) {
   return transactions
-    .filter((t) => t.amount > DEMO_THRESHOLDS.LARGE_TRANSACTION_AMOUNT)
+    .filter((t) => t.amount > thresholds.LARGE_TRANSACTION_AMOUNT)
     .map((t) => ({
       id: `large-${t.id}`,
       type: 'Large transaction',
       severity: 'High',
-      message: `Transaction ${t.id} of ₦${t.amount.toLocaleString()} is above ₦${DEMO_THRESHOLDS.LARGE_TRANSACTION_AMOUNT.toLocaleString()} and may require attention.`,
+      message: `Transaction ${t.id} of ₦${t.amount.toLocaleString()} is above ₦${thresholds.LARGE_TRANSACTION_AMOUNT.toLocaleString()} and may require attention.`,
       date: t.date,
       relatedTransactionIds: [t.id],
       relatedProductIds: [t.productId],
@@ -60,50 +60,50 @@ function windowClusters(sorted, windowMinutes, moreThanCount) {
   return clusters
 }
 
-function repeatedRefundsRule(transactions) {
+function repeatedRefundsRule(transactions, thresholds = DEMO_THRESHOLDS) {
   const refunds = transactions
     .filter((t) => t.type === 'refund')
     .sort((a, b) => parseDate(a.date) - parseDate(b.date))
   return windowClusters(
     refunds,
-    DEMO_THRESHOLDS.REPEATED_REFUNDS_WINDOW_MINUTES,
-    DEMO_THRESHOLDS.REPEATED_REFUNDS_COUNT,
+    thresholds.REPEATED_REFUNDS_WINDOW_MINUTES,
+    thresholds.REPEATED_REFUNDS_COUNT,
   ).map((group) => ({
     id: `refunds-${group[0].id}`,
     type: 'Repeated refunds',
     severity: 'High',
-    message: `${group.length} refunds occurred within ${DEMO_THRESHOLDS.REPEATED_REFUNDS_WINDOW_MINUTES / 60} hours and may require attention.`,
+    message: `${group.length} refunds occurred within ${thresholds.REPEATED_REFUNDS_WINDOW_MINUTES / 60} hours and may require attention.`,
     date: group[group.length - 1].date,
     relatedTransactionIds: group.map((t) => t.id),
     relatedProductIds: [...new Set(group.map((t) => t.productId))],
   }))
 }
 
-function excessiveDiscountRule(transactions) {
+function excessiveDiscountRule(transactions, thresholds = DEMO_THRESHOLDS) {
   return transactions
-    .filter((t) => Number(t.discount) >= DEMO_THRESHOLDS.EXCESSIVE_DISCOUNT_PCT)
+    .filter((t) => Number(t.discount) >= thresholds.EXCESSIVE_DISCOUNT_PCT)
     .map((t) => ({
       id: `discount-${t.id}`,
       type: 'High discount',
       severity: 'Medium',
-      message: `Transaction ${t.id} has a ${t.discount}% discount (threshold ${DEMO_THRESHOLDS.EXCESSIVE_DISCOUNT_PCT}%) and may require attention.`,
+      message: `Transaction ${t.id} has a ${t.discount}% discount (threshold ${thresholds.EXCESSIVE_DISCOUNT_PCT}%) and may require attention.`,
       date: t.date,
       relatedTransactionIds: [t.id],
       relatedProductIds: [t.productId],
     }))
 }
 
-function frequencyRule(transactions) {
+function frequencyRule(transactions, thresholds = DEMO_THRESHOLDS) {
   const sorted = [...transactions].sort((a, b) => parseDate(a.date) - parseDate(b.date))
   return windowClusters(
     sorted,
-    DEMO_THRESHOLDS.FREQUENCY_WINDOW_MINUTES,
-    DEMO_THRESHOLDS.FREQUENCY_COUNT,
+    thresholds.FREQUENCY_WINDOW_MINUTES,
+    thresholds.FREQUENCY_COUNT,
   ).map((group) => ({
     id: `freq-${group[0].id}`,
     type: 'Unusual frequency',
     severity: 'Medium',
-    message: `${group.length} transactions within ${DEMO_THRESHOLDS.FREQUENCY_WINDOW_MINUTES} minutes may require attention.`,
+    message: `${group.length} transactions within ${thresholds.FREQUENCY_WINDOW_MINUTES} minutes may require attention.`,
     date: group[group.length - 1].date,
     relatedTransactionIds: group.map((t) => t.id),
     relatedProductIds: [...new Set(group.map((t) => t.productId))],
@@ -125,12 +125,12 @@ function inventoryRule(products) {
 }
 
 // Runs all five rules and returns a combined alert list.
-export function evaluateRules(products, transactions) {
+export function evaluateRules(products, transactions, thresholds = DEMO_THRESHOLDS) {
   return [
-    ...largeTransactionRule(transactions),
-    ...repeatedRefundsRule(transactions),
-    ...excessiveDiscountRule(transactions),
-    ...frequencyRule(transactions),
+    ...largeTransactionRule(transactions, thresholds),
+    ...repeatedRefundsRule(transactions, thresholds),
+    ...excessiveDiscountRule(transactions, thresholds),
+    ...frequencyRule(transactions, thresholds),
     ...inventoryRule(products),
   ]
 }

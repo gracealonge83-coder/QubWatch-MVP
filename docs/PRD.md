@@ -178,6 +178,7 @@ The MVP includes:
 * Dashboard
 * Business monitoring
 * Rule-based alerts
+* Configurable monitoring rules (basic)
 * Alert review
 * Investigations
 * Investigation notes
@@ -353,6 +354,22 @@ QubWatch should monitor transaction activity using defined rules.
 The initial MVP should use rule-based monitoring rather than machine-learning anomaly detection.
 
 The system should evaluate relevant business activity and generate an alert when a defined condition is met.
+
+### Configurable Rules (MVP)
+
+The Business Owner and Authorized Manager may modify monitoring rule values in Settings. Staff users cannot modify monitoring rules.
+
+Configurable rules and their defaults:
+
+* Large Transaction: above ₦500,000
+* Repeated Refunds: more than 3 within 120 minutes
+* Excessive Discount: 20% or more
+* Unusual Transaction Frequency: more than 5 transactions within 60 minutes
+* Inventory Discrepancy: stock vs expectedStock; not configurable
+
+Because alerts are derived from the currently stored transaction data, changing a rule applies to all stored data. Existing alert statuses remain where the same deterministic alert ID continues to exist.
+
+Rule settings persist locally on the same browser and device and can be restored to the defaults above.
 
 ---
 
@@ -1003,7 +1020,6 @@ After the MVP has been tested, future versions may include:
 
 * Real AI integration
 * Machine-learning anomaly detection
-* Configurable monitoring rules
 * Advanced analytics
 * Business forecasting
 * Accounting integrations
