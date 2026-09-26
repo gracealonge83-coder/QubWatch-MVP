@@ -223,7 +223,7 @@ The following are outside the first MVP:
 * User deletion
 * Active/inactive user status
 * Password recovery
-* Permission enforcement
+* Advanced permission administration beyond the MVP's server-enforced role checks
 
 These features may be considered in later versions.
 
@@ -263,7 +263,7 @@ The MVP may initially use a simple business setup form.
 The business profile remains editable through Settings after initial setup.
 Saving updates the business information, and the saved business information is reflected on the Dashboard and header where applicable.
 Saved business information persists via the backend database so it remains available after page refresh and when the user reopens QubWatch; browser-local storage may remain as an offline cache.
-The same browser-local persistence model also retains operational records (products, transactions, alert statuses, investigations including notes, findings and resolutions, and audit records) on the same browser and device.
+The backend database is the system of record for operational records (products, transactions, alerts, investigations and audit records). Browser-local persistence may remain as an offline/cache layer for the existing client experience; it is not the authoritative source of backend-connected records.
 
 ---
 
@@ -1053,3 +1053,104 @@ After the MVP has been tested, future versions may include:
 **Giving you smarter eyes.**
 
 QubWatch is designed to help business owners see important business activities more clearly, notice unusual activity and investigate what deserves their attention.
+
+
+---
+
+# 44. Full-Stack Implementation and Lesson 6 Technical Notes
+
+This section records the implementation state used for the Lesson 6 prototype assessment. It supplements the product requirements above without replacing the product scope.
+
+## 44.1 Current Architecture
+
+QubWatch is implemented as a small full-stack application:
+
+**React/Vite frontend → Express API → SQLite database**
+
+The frontend communicates with backend routes under `/api`. The backend validates writes, applies authentication and role checks, and persists application data in SQLite.
+
+## 44.2 Technology Stack
+
+- **Frontend:** React 19, JavaScript/JSX, Vite
+- **Backend:** Node.js and Express
+- **Database:** SQLite using `better-sqlite3`
+- **PWA:** `vite-plugin-pwa`
+- **Styling:** CSS
+- **Authentication:** server-side sessions, HttpOnly cookies, scrypt password hashing
+- **API communication:** native browser `fetch` with credentials included
+
+## 44.3 Data and Accounts
+
+The implementation uses the four product roles already defined in Section 33:
+
+1. Business Owner
+2. Authorized Manager
+3. Staff User
+4. Administrator
+
+The main persisted entities are Business, User, Product, Transaction, Alert, Investigation, Audit, and session data. SQLite migrations create and evolve the database schema.
+
+Demonstration accounts and business records use non-production test data. Real passwords, access tokens, and database files are not part of the public repository.
+
+## 44.4 Important Implementation Files
+
+- `src/App.jsx` — main frontend application state, navigation, screens, and backend-connected UI states
+- `src/api/client.js` — shared frontend API client and HTTP error handling
+- `server/index.js` — Express API entry point
+- `server/auth.js` — session authentication and server-side role authorization
+- `server/db.js` — SQLite connection and migration runner
+- `server/routes/` — backend business/API routes
+- `server/migrations/` — database schema migrations
+- `vite.config.js` — Vite development proxy and PWA configuration
+- `public/` — installable web-app assets and manifest
+- `design.html` — standalone HTML design/prototype preview for Lesson 6 assessment
+
+## 44.5 Implementation Decisions
+
+- SQLite is the current database and system of record for backend-connected data.
+- The MVP uses deterministic, rule-based monitoring rather than advanced machine-learning anomaly detection.
+- Authentication uses server-side sessions stored in the database; session tokens are delivered through HttpOnly cookies rather than localStorage.
+- Role permissions are enforced on the server for protected operations.
+- The frontend uses a shared API client so loading, empty, success, authentication, authorization, validation, and error states can be represented consistently.
+- The standalone `design.html` contains no external scripts, fonts, or network dependencies so it can render through a static HTML preview service.
+- The product keeps a human reviewer in the decision loop. Alerts identify activity for review and do not independently establish wrongdoing.
+
+## 44.6 Design Notes
+
+The visual direction is intentionally simple, clear, professional, and suitable for a busy business owner or authorized manager. The prototype emphasizes:
+
+- business status at a glance
+- activity requiring attention
+- clear alert severity and reason
+- direct movement from alert review to investigation
+- readable tables and cards
+- responsive layouts for smaller screens
+- clear loading, empty, success, and error feedback in the application
+
+The static `design.html` file is an assessment-friendly visual preview of these concepts. It is separate from the production React application and does not replace the actual application UI.
+
+## 44.7 Agent Steering Notes
+
+Implementation work should follow these constraints:
+
+- Inspect and plan before modifying repository files.
+- Preserve approved PRD requirements unless an explicit requirement change is requested.
+- Keep MRT/business-monitoring-as-a-service material separate from QubWatch.
+- Use OpenCode as the preferred repository development workflow for this project.
+- Keep the QubWatch human-in-the-loop principle intact.
+- Do not introduce autonomous accusations, disciplinary decisions, or autonomous business decisions.
+- Keep secrets and real credentials out of the public repository.
+- Validate sensitive writes on the server rather than relying only on frontend validation.
+- Prefer small, verifiable implementation stages and confirm builds/tests after significant changes.
+
+## 44.8 Current Phase and Roadmap
+
+The project has progressed from the initial Vite/React foundation through core business functions, monitoring, investigation, AI Assistant work, and full-stack data implementation.
+
+The current roadmap is:
+
+1. Verify the full-stack implementation and error handling.
+2. Verify responsive and installable mobile/PWA behavior.
+3. Test the complete monitoring → alert → investigation → finding → resolution journey.
+4. Prepare and record the Lesson 6 prototype demonstration.
+5. Continue with the remaining mobile and final testing work described in Stage 6 and Stage 7.
