@@ -12,7 +12,7 @@ const NAV_ITEMS = [
   'Settings',
 ]
 
-function Layout({ currentPage, onNavigate, businessName, notificationCount, onOpenNotifications, children }) {
+function Layout({ currentPage, onNavigate, businessName, notificationCount, onOpenNotifications, user, onLogout, children }) {
   return (
     <div className="app">
       <header className="header">
@@ -29,6 +29,11 @@ function Layout({ currentPage, onNavigate, businessName, notificationCount, onOp
             Notifications{notificationCount > 0 ? ` (${notificationCount})` : ''}
           </button>
           <p className="business-pill">{businessName}</p>
+          {user && (
+            <button className="bell-btn" onClick={onLogout} aria-label="Logout">
+              Logout ({user.name})
+            </button>
+          )}
         </div>
       </header>
 

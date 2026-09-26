@@ -10,17 +10,18 @@ const ROLES = [
   'Administrator',
 ]
 
-function TeamSetup({ users, onAdd, onUpdate }) {
+function TeamSetup({ users, onAdd, onUpdate, newCredentials, onClearCredentials }) {
   const [name, setName] = useState('')
   const [role, setRole] = useState('Staff User')
   const [editingId, setEditingId] = useState(null)
   const [editName, setEditName] = useState('')
   const [editRole, setEditRole] = useState('Staff User')
 
-  function handleAdd(event) {
+  async function handleAdd(event) {
     event.preventDefault()
     if (!name.trim()) return
-    onAdd({ name: name.trim(), role })
+    const ok = await onAdd({ name: name.trim(), role })
+    if (!ok) return
     setName('')
     setRole('Staff User')
   }
@@ -37,17 +38,28 @@ function TeamSetup({ users, onAdd, onUpdate }) {
     setEditRole('Staff User')
   }
 
-  function handleSaveEdit(event) {
+  async function handleSaveEdit(event) {
     event.preventDefault()
     if (!editName.trim()) return
-    onUpdate(editingId, { name: editName.trim(), role: editRole })
+    const ok = await onUpdate(editingId, { name: editName.trim(), role: editRole })
+    if (!ok) return
     cancelEdit()
   }
 
   return (
     <div className="card">
       <h2>Team</h2>
-      <p className="muted">PRD roles only. Changes stay in memory for this session.</p>
+      <p className="muted">PRD roles only. Changes save to the QubWatch backend.</p>
+      {newCredentials && (
+        <div className="card">
+          <p><strong>Login password for {newCredentials.name}:</strong></p>
+          <p>{newCredentials.temporaryPassword}</p>
+          <p className="muted">Shown once. Share it securely, then dismiss.</p>
+          <div className="form-row">
+            <button type="button" className="secondary-btn" onClick={onClearCredentials}>Dismiss</button>
+          </div>
+        </div>
+      )}
       <ul>
         {users.map((u) => (
           <li key={u.id}>

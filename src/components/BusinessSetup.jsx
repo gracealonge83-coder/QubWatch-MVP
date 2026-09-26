@@ -12,16 +12,16 @@ function BusinessSetup({ business, onSave }) {
     setSaved(false)
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    onSave(form)
-    setSaved(true)
+    const ok = await onSave(form)
+    if (ok) setSaved(true)
   }
 
   return (
     <div className="card">
       <h2>Business Setup</h2>
-      <p className="muted">Simple setup form for Stage 1. Changes stay in memory.</p>
+      <p className="muted">Simple setup form for Stage 1. Changes save to the QubWatch backend.</p>
       <form onSubmit={handleSubmit} className="form">
         <label>
           Business name

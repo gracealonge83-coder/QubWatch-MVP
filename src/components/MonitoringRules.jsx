@@ -51,13 +51,13 @@ function MonitoringRules({ config, canEdit, onSave, onRestore }) {
     setForm((prev) => ({ ...prev, [name]: value }))
   }
 
-  function handleSave(event) {
+  async function handleSave(event) {
     event.preventDefault()
     if (!canEdit) return
     const found = validate(form)
     setErrors(found)
     if (Object.keys(found).length > 0) return
-    onSave({
+    await onSave({
       LARGE_TRANSACTION_AMOUNT: Number(form.LARGE_TRANSACTION_AMOUNT),
       REPEATED_REFUNDS_COUNT: Number(form.REPEATED_REFUNDS_COUNT),
       REPEATED_REFUNDS_WINDOW_MINUTES: Number(form.REPEATED_REFUNDS_WINDOW_MINUTES),
@@ -67,9 +67,10 @@ function MonitoringRules({ config, canEdit, onSave, onRestore }) {
     })
   }
 
-  function handleRestore() {
+  async function handleRestore() {
     if (!canEdit) return
-    onRestore()
+    const ok = await onRestore()
+    if (!ok) return
     setForm(toStrings({ ...DEMO_THRESHOLDS }))
     setErrors({})
   }

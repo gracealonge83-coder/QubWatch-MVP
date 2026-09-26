@@ -42,19 +42,20 @@ function Products({ products, onAdd, onUpdate }) {
     setForm(EMPTY_FORM)
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     const price = Number(form.price)
     const stock = Number(form.stock)
     if (!form.name.trim() || !form.category.trim()) return
     if (!(price > 0) || !(stock >= 0)) return
     const data = { name: form.name.trim(), category: form.category.trim(), price, stock }
+    let ok = false
     if (editingId) {
-      onUpdate(editingId, data)
+      ok = await onUpdate(editingId, data)
     } else {
-      onAdd(data)
+      ok = await onAdd(data)
     }
-    cancelEdit()
+    if (ok) cancelEdit()
   }
 
   return (

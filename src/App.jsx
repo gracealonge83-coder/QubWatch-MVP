@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Layout from './components/Layout.jsx'
+import Login from './pages/Login.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Settings from './pages/Settings.jsx'
 import Products from './pages/Products.jsx'
@@ -8,114 +9,123 @@ import Alerts from './pages/Alerts.jsx'
 import Investigations from './pages/Investigations.jsx'
 import AiAssistant from './pages/AiAssistant.jsx'
 import Notifications from './pages/Notifications.jsx'
-import { evaluateRules, DEMO_THRESHOLDS } from '../shared/rules.js'
-import { business as initialBusiness, users as seedUsers, products as seedProducts, transactions as seedTransactions } from './data/mockData.js'
-import { loadBusiness, saveBusiness, loadUsers, saveUsers } from './storage/localStore.js'
-import {
-  loadProducts, saveProducts, loadTransactions, saveTransactions,
-  loadAlertStatus, saveAlertStatus, loadInvestigations, saveInvestigations,
-  loadAudit, saveAudit, loadRuleConfig, saveRuleConfig,
-} from './storage/localStore.js'
+import { DEMO_THRESHOLDS } from '../shared/rules.js'
+import { api } from './api/client.js'
 
-// Stage 4 investigations: alert -> review -> investigation -> evidence ->
-// finding -> resolution. Human decides everything. In-memory only.
+// Stage 6 frontend API migration: the backend is the source of truth.
+// Pages keep the same props and UI; only the data layer changed.
 // No ML, no AI, no autonomous decisions.
-function formatNow() {
-  const d = new Date()
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
 function App() {
   const [page, setPage] = useState('Dashboard')
-  const [biz, setBiz] = useState(() => loadBusiness(initialBusiness))
-  const [productList, setProductList] = useState(() => loadProducts(seedProducts))
-  const [txnList, setTxnList] = useState(() => loadTransactions(seedTransactions))
-  const [userList, setUserList] = useState(() => loadUsers(seedUsers))
-  const [statusById, setStatusById] = useState(() => loadAlertStatus({}))
+  const [session, setSession] = useState({ status: 'loading', user: null })
+  const [biz, setBiz] = useState(null)
+  const [productList, setProductList] = useState([])
+  const [txnList, setTxnList] = useState([])
+  const [userList, setUserList] = useState([])
+  const [alerts, setAlerts] = useState([])
   const [selectedAlertId, setSelectedAlertId] = useState(null)
-  const [investigations, setInvestigations] = useState(() => loadInvestigations([]))
+  const [investigations, setInvestigations] = useState([])
   const [selectedInvestigationId, setSelectedInvestigationId] = useState(null)
-  const [auditLog, setAuditLog] = useState(() => loadAudit([]))
-  const [ruleConfig, setRuleConfig] = useState(() => loadRuleConfig({ ...DEMO_THRESHOLDS }))
+  const [auditLog, setAuditLog] = useState([])
+  const [ruleConfig, setRuleConfig] = useState({ ...DEMO_THRESHOLDS })
   const [aiContext, setAiContext] = useState({ type: 'overview', id: null })
-  const currentUser = userList.length > 0 ? userList[0] : seedUsers[0]
+  const [apiError, setApiError] = useState(null)
+  const [newUserCredentials, setNewUserCredentials] = useState(null)
+  const currentUser = session.user
 
-  // Persist saved business + team so a page refresh keeps them
-  // on this browser/device. Running state remains the source of truth.
-  useEffect(() => {
-    saveBusiness(biz)
-  }, [biz])
-
-  useEffect(() => {
-    saveUsers(userList)
-  }, [userList])
-
-  useEffect(() => {
-    saveProducts(productList)
-  }, [productList])
-
-  useEffect(() => {
-    saveTransactions(txnList)
-  }, [txnList])
-
-  useEffect(() => {
-    saveAlertStatus(statusById)
-  }, [statusById])
-
-  useEffect(() => {
-    saveInvestigations(investigations)
-  }, [investigations])
-
-  useEffect(() => {
-    saveAudit(auditLog)
-  }, [auditLog])
-
-  useEffect(() => {
-    saveRuleConfig(ruleConfig)
-  }, [ruleConfig])
-
-  function updateRuleConfig(config) {
-    setRuleConfig(config)
+  // Loads every slice from the API after login. Returns true on success.
+  async function refreshAll() {
+    const [bizRes, usersRes, productsRes, txnsRes, alertsRes, invRes, auditRes, rulesRes] = await Promise.all([
+      api.get('/business'),
+      api.get('/users'),
+      api.get('/products'),
+      api.get('/transactions'),
+      api.get('/alerts'),
+      api.get('/investigations'),
+      api.get('/audit'),
+      api.get('/rules'),
+    ])
+    // Audit read is restricted to Owner/Manager on the server; a 403 here must
+    // not lock other roles out of the app. Default to an empty trail.
+    const failed = [bizRes, usersRes, productsRes, txnsRes, alertsRes, invRes, rulesRes].find((r) => !r.ok)
+    if (failed) {
+      setApiError(failed.error)
+      return false
+    }
+    setBiz(bizRes.data)
+    setUserList(usersRes.data)
+    setProductList(productsRes.data)
+    setTxnList(txnsRes.data)
+    setAlerts(alertsRes.data)
+    setInvestigations(invRes.data)
+    setAuditLog(auditRes.ok ? auditRes.data : [])
+    setRuleConfig(rulesRes.data)
+    setApiError(null)
+    return true
   }
 
-  function restoreDefaultRules() {
+  function apiFailed(res) {
+    if (res.status === 401) {
+      setSession({ status: 'ready', user: null })
+      setApiError('Your session has ended. Please log in again.')
+    } else {
+      setApiError(res.error)
+    }
+    return false
+  }
+
+  // Session bootstrap: restore the login on refresh, then load all data.
+  useEffect(() => {
+    let cancelled = false
+    async function boot() {
+      const me = await api.get('/auth/me')
+      if (cancelled) return
+      if (!me.ok) {
+        setSession({ status: 'ready', user: null })
+        return
+      }
+      setSession({ status: 'ready', user: me.data.user })
+      await refreshAll()
+    }
+    boot()
+    return () => { cancelled = true }
+  }, [])
+
+  async function login(identifier, password) {
+    setApiError(null)
+    const res = await api.post('/auth/login', { identifier, password })
+    if (!res.ok) return res.error
+    setSession({ status: 'ready', user: res.data.user })
+    const ok = await refreshAll()
+    return ok ? null : 'Logged in, but data failed to load. Please try again.'
+  }
+
+  async function logout() {
+    await api.post('/auth/logout')
+    setSession({ status: 'ready', user: null })
+    setBiz(null)
+    setProductList([])
+    setTxnList([])
+    setUserList([])
+    setAlerts([])
+    setSelectedAlertId(null)
+    setInvestigations([])
+    setSelectedInvestigationId(null)
+    setAuditLog([])
     setRuleConfig({ ...DEMO_THRESHOLDS })
+    setApiError(null)
+    setNewUserCredentials(null)
+    setPage('Dashboard')
   }
 
-  const canEditRules =
-    currentUser.role === 'Business Owner' || currentUser.role === 'Authorized Manager'
-
-  function addProduct(data) {
-    const product = { id: `prod-${Date.now()}`, expectedStock: data.stock, ...data }
-    setProductList((prev) => [...prev, product])
+  async function refreshAudit() {
+    const res = await api.get('/audit')
+    if (res.ok) setAuditLog(res.data)
   }
 
-  function updateProduct(id, updates) {
-    setProductList((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)))
-  }
-
-  function addUser(data) {
-    const user = { id: `user-${Date.now()}`, businessId: biz.id, ...data }
-    setUserList((prev) => [...prev, user])
-  }
-
-  function updateUser(id, updates) {
-    setUserList((prev) => prev.map((u) => (u.id === id ? { ...u, ...updates } : u)))
-  }
-
-  function addTransaction(data) {
-    const txn = { id: `txn-${Date.now()}`, date: formatNow(), ...data }
-    setTxnList((prev) => [...prev, txn])
-  }
-
-  const alerts = useMemo(() => {
-    const base = evaluateRules(productList, txnList, ruleConfig)
-    return base.map((a) => ({ ...a, status: statusById[a.id] || 'New' }))
-  }, [productList, txnList, ruleConfig, statusById])
-
-  function updateAlertStatus(id, status) {
-    setStatusById((prev) => ({ ...prev, [id]: status }))
+  async function refreshAlerts() {
+    const res = await api.get('/alerts')
+    if (res.ok) setAlerts(res.data)
   }
 
   function openAlert(id) {
@@ -123,49 +133,92 @@ function App() {
     setPage('Alerts')
   }
 
-  function logAudit(investigationId, action) {
-    const entry = {
-      id: `audit-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
-      investigationId,
-      userId: currentUser.id,
-      action,
-      date: formatNow(),
-    }
-    setAuditLog((prev) => [...prev, entry])
+  const canEditRules = !!currentUser && (
+    currentUser.role === 'Business Owner' || currentUser.role === 'Authorized Manager'
+  )
+
+  async function saveBusiness(data) {
+    const res = await api.patch('/business', data)
+    if (!res.ok) return apiFailed(res)
+    setBiz(res.data)
+    return true
   }
 
-  function startInvestigation(alertId) {
+  async function addUser(data) {
+    const res = await api.post('/users', data)
+    if (!res.ok) return apiFailed(res)
+    setUserList((prev) => [...prev, res.data.user])
+    setNewUserCredentials({ name: res.data.user.name, temporaryPassword: res.data.temporaryPassword })
+    return true
+  }
+
+  async function updateUser(id, updates) {
+    const res = await api.patch(`/users/${id}`, updates)
+    if (!res.ok) return apiFailed(res)
+    setUserList((prev) => prev.map((u) => (u.id === id ? res.data : u)))
+    return true
+  }
+
+  async function addProduct(data) {
+    const res = await api.post('/products', data)
+    if (!res.ok) return apiFailed(res)
+    setProductList((prev) => [...prev, res.data])
+    return true
+  }
+
+  async function updateProduct(id, updates) {
+    const res = await api.patch(`/products/${id}`, updates)
+    if (!res.ok) return apiFailed(res)
+    setProductList((prev) => prev.map((p) => (p.id === id ? res.data : p)))
+    return true
+  }
+
+  async function addTransaction(data) {
+    const res = await api.post('/transactions', data)
+    if (!res.ok) return apiFailed(res)
+    setTxnList((prev) => [...prev, res.data])
+    await refreshAlerts()
+    return true
+  }
+
+  async function updateRuleConfig(config) {
+    const res = await api.put('/rules', config)
+    if (!res.ok) return apiFailed(res)
+    setRuleConfig(res.data)
+    await refreshAlerts()
+    return true
+  }
+
+  async function restoreDefaultRules() {
+    const res = await api.put('/rules', { ...DEMO_THRESHOLDS })
+    if (!res.ok) return apiFailed(res)
+    setRuleConfig(res.data)
+    await refreshAlerts()
+    return true
+  }
+
+  async function updateAlertStatus(id, status) {
+    const res = await api.patch(`/alerts/${id}/status`, { status })
+    if (!res.ok) return apiFailed(res)
+    setAlerts((prev) => prev.map((a) => (a.id === id ? res.data : a)))
+    return true
+  }
+
+  async function startInvestigation(alertId) {
     const existing = investigations.find((i) => i.alertId === alertId && i.status !== 'Closed')
     if (existing) {
       setSelectedInvestigationId(existing.id)
       setPage('Investigations')
-      return
+      return true
     }
-    const alert = alerts.find((a) => a.id === alertId)
-    if (!alert || (alert.status !== 'New' && alert.status !== 'Under Review')) return
-    const id = `inv-${Date.now()}`
-    const investigation = {
-      id,
-      alertId,
-      alertType: alert.type,
-      alertSeverity: alert.severity,
-      investigatorId: currentUser.id,
-      status: 'Open',
-      relatedTransactionIds: [...alert.relatedTransactionIds],
-      relatedProductIds: [...alert.relatedProductIds],
-      notes: [],
-      finding: '',
-      findingOther: '',
-      resolutionNotes: '',
-      resolvedById: '',
-      createdAt: formatNow(),
-      resolvedAt: '',
-    }
-    setInvestigations((prev) => [...prev, investigation])
-    updateAlertStatus(alertId, 'Investigating')
-    logAudit(id, 'Investigation opened')
-    setSelectedInvestigationId(id)
+    const res = await api.post('/investigations', { alertId })
+    if (!res.ok) return apiFailed(res)
+    setInvestigations((prev) => [...prev, res.data])
+    setAlerts((prev) => prev.map((a) => (a.id === alertId ? { ...a, status: 'Investigating' } : a)))
+    await refreshAudit()
+    setSelectedInvestigationId(res.data.id)
     setPage('Investigations')
+    return true
   }
 
   function openInvestigation(id) {
@@ -183,66 +236,55 @@ function App() {
     setPage('AI Assistant')
   }
 
-  function addNote(invId, content) {
-    setInvestigations((prev) => prev.map((inv) => {
-      if (inv.id !== invId) return inv
-      const note = {
-        id: `note-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
-        authorId: currentUser.id,
-        content,
-        date: formatNow(),
-      }
-      return {
-        ...inv,
-        notes: [...inv.notes, note],
-        status: inv.status === 'Open' ? 'Under Investigation' : inv.status,
-      }
-    }))
-    logAudit(invId, 'Note added')
+  async function addNote(invId, content) {
+    const res = await api.post(`/investigations/${invId}/notes`, { content })
+    if (!res.ok) return apiFailed(res)
+    setInvestigations((prev) => prev.map((inv) => (inv.id === invId
+      ? { ...inv, notes: [...inv.notes, res.data], status: inv.status === 'Open' ? 'Under Investigation' : inv.status }
+      : inv)))
+    await refreshAudit()
+    return true
   }
 
-  function assignInvestigator(invId, userId) {
-    setInvestigations((prev) => prev.map((inv) => (
-      inv.id === invId ? { ...inv, investigatorId: userId } : inv
-    )))
+  async function assignInvestigator(invId, userId) {
+    const res = await api.patch(`/investigations/${invId}`, { investigatorId: userId })
+    if (!res.ok) return apiFailed(res)
+    setInvestigations((prev) => prev.map((inv) => (inv.id === invId ? res.data : inv)))
+    return true
   }
 
-  function recordFinding(invId, finding, findingOther) {
-    setInvestigations((prev) => prev.map((inv) => (
-      inv.id === invId ? { ...inv, finding, findingOther } : inv
-    )))
-    logAudit(invId, 'Finding recorded')
+  async function recordFinding(invId, finding, findingOther) {
+    const res = await api.post(`/investigations/${invId}/finding`, { finding, findingOther })
+    if (!res.ok) return apiFailed(res)
+    setInvestigations((prev) => prev.map((inv) => (inv.id === invId ? res.data : inv)))
+    await refreshAudit()
+    return true
   }
 
-  function resolveInvestigation(invId, resolutionNotes) {
-    const inv = investigations.find((i) => i.id === invId)
-    if (!inv || !inv.finding || !resolutionNotes.trim()) return
-    const date = formatNow()
-    setInvestigations((prev) => prev.map((i) => (
-      i.id === invId
-        ? { ...i, status: 'Resolved', resolutionNotes: resolutionNotes.trim(), resolvedById: currentUser.id, resolvedAt: date }
-        : i
-    )))
-    updateAlertStatus(inv.alertId, 'Resolved')
-    logAudit(invId, 'Investigation resolved')
+  async function resolveInvestigation(invId, resolutionNotes) {
+    const res = await api.post(`/investigations/${invId}/resolve`, { resolutionNotes })
+    if (!res.ok) return apiFailed(res)
+    setInvestigations((prev) => prev.map((i) => (i.id === invId ? res.data : i)))
+    setAlerts((prev) => prev.map((a) => (a.id === res.data.alertId ? { ...a, status: 'Resolved' } : a)))
+    await refreshAudit()
+    return true
   }
 
-  function closeInvestigation(invId) {
-    setInvestigations((prev) => prev.map((i) => (
-      i.id === invId && i.status === 'Resolved' ? { ...i, status: 'Closed' } : i
-    )))
-    logAudit(invId, 'Investigation closed')
+  async function closeInvestigation(invId) {
+    const res = await api.post(`/investigations/${invId}/close`)
+    if (!res.ok) return apiFailed(res)
+    setInvestigations((prev) => prev.map((i) => (i.id === invId ? res.data : i)))
+    await refreshAudit()
+    return true
   }
 
-  function deleteInvestigation(invId) {
-    const inv = investigations.find((i) => i.id === invId)
-    // Completed only: Open and Under Investigation can never be deleted.
-    if (!inv || (inv.status !== 'Resolved' && inv.status !== 'Closed')) return
+  async function deleteInvestigation(invId) {
+    const res = await api.del(`/investigations/${invId}`)
+    if (!res.ok) return apiFailed(res)
     setInvestigations((prev) => prev.filter((i) => i.id !== invId))
-    // Drop this investigation's scoped audit records; the linked alert's
-    // review history is intentionally left untouched.
-    setAuditLog((prev) => prev.filter((e) => e.investigationId !== invId))
+    await refreshAudit()
     if (selectedInvestigationId === invId) setSelectedInvestigationId(null)
+    return true
   }
 
   const openInvestigationCount = investigations.filter(
@@ -268,7 +310,7 @@ function App() {
     content = (
       <Settings
         business={biz}
-        onSaveBusiness={setBiz}
+        onSaveBusiness={saveBusiness}
         users={userList}
         onAddUser={addUser}
         onUpdateUser={updateUser}
@@ -276,6 +318,8 @@ function App() {
         canEditRules={canEditRules}
         onSaveRules={updateRuleConfig}
         onRestoreRules={restoreDefaultRules}
+        newCredentials={newUserCredentials}
+        onClearCredentials={() => setNewUserCredentials(null)}
       />
     )
   } else if (page === 'Products') {
@@ -355,6 +399,43 @@ function App() {
     )
   }
 
+  if (session.status === 'loading') {
+    return (
+      <div className="app">
+        <main className="main">
+          <div className="card"><p>Loading QubWatch…</p></div>
+        </main>
+      </div>
+    )
+  }
+
+  if (!session.user) {
+    return <Login onLogin={login} />
+  }
+
+  // Data must be present before any page renders: pages read business.name
+  // and other records unconditionally. This covers both the post-login
+  // window and refresh-with-session while data is still loading.
+  async function retryLoad() {
+    setApiError(null)
+    await refreshAll()
+  }
+
+  if (!biz) {
+    return (
+      <div className="app">
+        <main className="main">
+          <div className="card">
+            <p>{apiError || 'Loading QubWatch…'}</p>
+            <div className="form-row">
+              <button type="button" className="secondary-btn" onClick={retryLoad}>Retry</button>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <Layout
       currentPage={page}
@@ -362,7 +443,17 @@ function App() {
       businessName={biz.name}
       notificationCount={alerts.filter((a) => a.status === 'New' || a.status === 'Under Review').length}
       onOpenNotifications={() => setPage('Notifications')}
+      user={currentUser}
+      onLogout={logout}
     >
+      {apiError && (
+        <div className="card">
+          <p>{apiError}</p>
+          <div className="form-row">
+            <button type="button" className="secondary-btn" onClick={() => setApiError(null)}>Dismiss</button>
+          </div>
+        </div>
+      )}
       {content}
     </Layout>
   )

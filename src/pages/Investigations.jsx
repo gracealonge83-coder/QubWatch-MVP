@@ -115,22 +115,22 @@ function InvestigationDetail({
   const findingValid = findingChoice && (findingChoice !== 'Other' || findingOther.trim())
   const canResolve = isOpen && findingValid && resolutionNotes.trim()
 
-  function submitNote(event) {
+  async function submitNote(event) {
     event.preventDefault()
     if (!noteContent.trim()) return
-    onAddNote(investigation.id, noteContent.trim())
-    setNoteContent('')
+    const ok = await onAddNote(investigation.id, noteContent.trim())
+    if (ok) setNoteContent('')
   }
 
-  function submitFinding() {
+  async function submitFinding() {
     if (!findingValid) return
-    onRecordFinding(investigation.id, findingChoice, findingChoice === 'Other' ? findingOther.trim() : '')
+    await onRecordFinding(investigation.id, findingChoice, findingChoice === 'Other' ? findingOther.trim() : '')
   }
 
-  function submitResolve() {
+  async function submitResolve() {
     if (!canResolve) return
-    onResolve(investigation.id, resolutionNotes.trim())
-    setResolutionNotes('')
+    const ok = await onResolve(investigation.id, resolutionNotes.trim())
+    if (ok) setResolutionNotes('')
   }
 
   function handleDelete() {

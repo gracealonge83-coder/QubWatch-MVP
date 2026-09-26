@@ -29,11 +29,11 @@ function Transactions({ transactions, products, users, currentUser, onAdd }) {
     setForm((prev) => ({ ...prev, [name]: value }))
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     if (!selected || !(quantity > 0)) return
     if (!(discountPct >= 0) || !(discountPct <= 100)) return
-    onAdd({
+    const ok = await onAdd({
       type: form.type,
       productId: form.productId,
       quantity,
@@ -41,7 +41,7 @@ function Transactions({ transactions, products, users, currentUser, onAdd }) {
       staffId: form.staffId || currentUser.id,
       discount: discountPct,
     })
-    setForm((prev) => ({ ...prev, quantity: '1', discount: '0' }))
+    if (ok) setForm((prev) => ({ ...prev, quantity: '1', discount: '0' }))
   }
 
   const visible = [...transactions].reverse().filter((t) => {
