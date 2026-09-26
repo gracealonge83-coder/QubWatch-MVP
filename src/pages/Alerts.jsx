@@ -10,6 +10,8 @@ function Alerts({ alerts, products, transactions, users, selectedId, onSelect, o
   const [severity, setSeverity] = useState('all')
   const [status, setStatus] = useState('all')
   const [type, setType] = useState('all')
+  const [notice, setNotice] = useState(null)
+  const [busyAction, setBusyAction] = useState(null)
 
   const types = ['all', ...new Set(alerts.map((a) => a.type))]
   const productById = Object.fromEntries(products.map((p) => [p.id, p]))
@@ -28,6 +30,31 @@ function Alerts({ alerts, products, transactions, users, selectedId, onSelect, o
     ? investigations.find((i) => i.alertId === selected.id && i.status !== 'Closed') || null
     : null
   const canStart = selected && (selected.status === 'New' || selected.status === 'Under Review')
+  const shownNotice = notice && selected && notice.id === selected.id ? notice.text : null
+
+  async function handleStatusChange(newStatus) {
+    if (!selected || busyAction) return
+    setNotice(null)
+    setBusyAction(newStatus)
+    let ok = false
+    try {
+      ok = await onStatusChange(selected.id, newStatus)
+    } finally {
+      setBusyAction(null)
+    }
+    if (ok) setNotice({ id: selected.id, text: `Alert marked as ${newStatus}.` })
+  }
+
+  async function handleStartInvestigation() {
+    if (!selected || busyAction) return
+    setNotice(null)
+    setBusyAction('investigation')
+    try {
+      await onStartInvestigation(selected.id)
+    } finally {
+      setBusyAction(null)
+    }
+  }
 
   return (
     <div className="grid">
@@ -113,15 +140,16 @@ function Alerts({ alerts, products, transactions, users, selectedId, onSelect, o
             )}
 
             <div className="form-row">
-              <button className="secondary-btn" onClick={() => onStatusChange(selected.id, 'Under Review')}>Review</button>
-              <button className="secondary-btn" onClick={() => onStatusChange(selected.id, 'Resolved')}>Resolve</button>
-              <button className="secondary-btn" onClick={() => onStatusChange(selected.id, 'Dismissed')}>Dismiss</button>
+              <button className="secondary-btn" disabled={busyAction !== null} onClick={() => handleStatusChange('Under Review')}>{busyAction === 'Under Review' ? 'Updating…' : 'Review'}</button>
+              <button className="secondary-btn" disabled={busyAction !== null} onClick={() => handleStatusChange('Resolved')}>{busyAction === 'Resolved' ? 'Updating…' : 'Resolve'}</button>
+              <button className="secondary-btn" disabled={busyAction !== null} onClick={() => handleStatusChange('Dismissed')}>{busyAction === 'Dismissed' ? 'Updating…' : 'Dismiss'}</button>
             </div>
+            {shownNotice && <p role="status">{shownNotice}</p>}
             <div className="form-row">
               {existingInvestigation ? (
                 <button className="secondary-btn" onClick={() => onOpenInvestigation(existingInvestigation.id)}>Open investigation</button>
               ) : canStart ? (
-                <button className="secondary-btn" onClick={() => onStartInvestigation(selected.id)}>Start investigation</button>
+                <button className="secondary-btn" disabled={busyAction !== null} onClick={handleStartInvestigation}>{busyAction === 'investigation' ? 'Starting…' : 'Start investigation'}</button>
               ) : (
                 <p className="muted">Investigations start from New, Under Review or Investigating alerts.</p>
               )}

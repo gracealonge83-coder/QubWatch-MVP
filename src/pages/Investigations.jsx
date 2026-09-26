@@ -101,6 +101,8 @@ function InvestigationDetail({
   const [findingChoice, setFindingChoice] = useState(investigation.finding || '')
   const [findingOther, setFindingOther] = useState(investigation.findingOther || '')
   const [resolutionNotes, setResolutionNotes] = useState('')
+  const [notice, setNotice] = useState(null)
+  const [busyOp, setBusyOp] = useState(null)
 
   const productById = Object.fromEntries(products.map((p) => [p.id, p]))
   const txnById = Object.fromEntries(transactions.map((t) => [t.id, t]))
@@ -114,35 +116,96 @@ function InvestigationDetail({
 
   const findingValid = findingChoice && (findingChoice !== 'Other' || findingOther.trim())
   const canResolve = isOpen && findingValid && resolutionNotes.trim()
+  const shownNotice = notice && notice.id === investigation.id ? notice.text : null
 
   async function submitNote(event) {
     event.preventDefault()
-    if (!noteContent.trim()) return
-    const ok = await onAddNote(investigation.id, noteContent.trim())
-    if (ok) setNoteContent('')
+    if (!noteContent.trim() || busyOp) return
+    setNotice(null)
+    setBusyOp('note')
+    let ok = false
+    try {
+      ok = await onAddNote(investigation.id, noteContent.trim())
+    } finally {
+      setBusyOp(null)
+    }
+    if (!ok) return
+    setNoteContent('')
+    setNotice({ id: investigation.id, text: 'Note added.' })
   }
 
   async function submitFinding() {
-    if (!findingValid) return
-    await onRecordFinding(investigation.id, findingChoice, findingChoice === 'Other' ? findingOther.trim() : '')
+    if (!findingValid || busyOp) return
+    setNotice(null)
+    setBusyOp('finding')
+    let ok = false
+    try {
+      ok = await onRecordFinding(investigation.id, findingChoice, findingChoice === 'Other' ? findingOther.trim() : '')
+    } finally {
+      setBusyOp(null)
+    }
+    if (ok) setNotice({ id: investigation.id, text: 'Finding recorded.' })
   }
 
   async function submitResolve() {
-    if (!canResolve) return
-    const ok = await onResolve(investigation.id, resolutionNotes.trim())
-    if (ok) setResolutionNotes('')
+    if (!canResolve || busyOp) return
+    setNotice(null)
+    setBusyOp('resolve')
+    let ok = false
+    try {
+      ok = await onResolve(investigation.id, resolutionNotes.trim())
+    } finally {
+      setBusyOp(null)
+    }
+    if (!ok) return
+    setResolutionNotes('')
+    setNotice({ id: investigation.id, text: 'Investigation resolved.' })
   }
 
-  function handleDelete() {
-    const ok = window.confirm(
+  async function handleClose() {
+    if (busyOp) return
+    setNotice(null)
+    setBusyOp('close')
+    let ok = false
+    try {
+      ok = await onClose(investigation.id)
+    } finally {
+      setBusyOp(null)
+    }
+    if (ok) setNotice({ id: investigation.id, text: 'Investigation closed.' })
+  }
+
+  async function handleAssign(event) {
+    if (busyOp) return
+    setNotice(null)
+    setBusyOp('assign')
+    let ok = false
+    try {
+      ok = await onAssignInvestigator(investigation.id, event.target.value)
+    } finally {
+      setBusyOp(null)
+    }
+    if (ok) setNotice({ id: investigation.id, text: 'Investigator updated.' })
+  }
+
+  async function handleDelete() {
+    const confirmed = window.confirm(
       'Delete this completed investigation? This removes its details, notes, finding, resolution and activity records. This cannot be undone.',
     )
-    if (ok) onDelete(investigation.id)
+    if (!confirmed || busyOp) return
+    setNotice(null)
+    setBusyOp('delete')
+    try {
+      await onDelete(investigation.id)
+    } finally {
+      setBusyOp(null)
+    }
   }
 
   return (
     <div>
       <p><strong>{investigation.id}</strong></p>
+      {shownNotice && <p role="status">{shownNotice}</p>}
       <p>Related alert: {alert ? alert.type : investigation.alertType} ({alert ? alert.severity : investigation.alertSeverity})</p>
       {alert && (
         <button className="secondary-btn" onClick={() => onOpenAlert(alert.id)}>View alert</button>
@@ -154,8 +217,8 @@ function InvestigationDetail({
         Investigator:{' '}
         <select
           value={investigation.investigatorId}
-          onChange={(e) => onAssignInvestigator(investigation.id, e.target.value)}
-          disabled={!isOpen}
+          onChange={handleAssign}
+          disabled={!isOpen || busyOp !== null}
         >
           {users.map((u) => (
             <option key={u.id} value={u.id}>{u.name} — {u.role}</option>
@@ -208,9 +271,9 @@ function InvestigationDetail({
         <form onSubmit={submitNote} className="form">
           <label>
             Add note (as {currentUser.name})
-            <textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} rows={3} />
+            <textarea value={noteContent} onChange={(e) => { setNoteContent(e.target.value); setNotice(null) }} rows={3} />
           </label>
-          <button type="submit" className="primary-btn">Add note</button>
+          <button type="submit" className="primary-btn" disabled={busyOp !== null}>{busyOp === 'note' ? 'Adding…' : 'Add note'}</button>
         </form>
       )}
 
@@ -224,7 +287,7 @@ function InvestigationDetail({
         <div className="form">
           <label>
             Finding
-            <select value={findingChoice} onChange={(e) => setFindingChoice(e.target.value)}>
+            <select value={findingChoice} onChange={(e) => { setFindingChoice(e.target.value); setNotice(null) }}>
               <option value="">Select a finding</option>
               {FINDINGS.map((f) => (
                 <option key={f} value={f}>{f}</option>
@@ -234,11 +297,11 @@ function InvestigationDetail({
           {findingChoice === 'Other' && (
             <label>
               Describe (Other)
-              <input value={findingOther} onChange={(e) => setFindingOther(e.target.value)} />
+              <input value={findingOther} onChange={(e) => { setFindingOther(e.target.value); setNotice(null) }} />
             </label>
           )}
-          <button type="button" className="secondary-btn" onClick={submitFinding} disabled={!findingValid}>
-            Record finding
+          <button type="button" className="secondary-btn" onClick={submitFinding} disabled={!findingValid || busyOp !== null}>
+            {busyOp === 'finding' ? 'Saving…' : 'Record finding'}
           </button>
         </div>
       )}
@@ -251,20 +314,20 @@ function InvestigationDetail({
           <p>Resolved by: {userById[investigation.resolvedById] ? userById[investigation.resolvedById].name : ''} on {formatDateTime(investigation.resolvedAt)}</p>
           <p>Final status: {investigation.status}</p>
           {investigation.status === 'Resolved' && (
-            <button className="secondary-btn" onClick={() => onClose(investigation.id)}>Close investigation</button>
+            <button className="secondary-btn" onClick={handleClose} disabled={busyOp !== null}>{busyOp === 'close' ? 'Closing…' : 'Close investigation'}</button>
           )}
           {(investigation.status === 'Resolved' || investigation.status === 'Closed') && (
-            <button className="secondary-btn" onClick={handleDelete}>Delete investigation</button>
+            <button className="secondary-btn" onClick={handleDelete} disabled={busyOp !== null}>{busyOp === 'delete' ? 'Deleting…' : 'Delete investigation'}</button>
           )}
         </div>
       ) : (
         <div className="form">
           <label>
             Resolution notes
-            <textarea value={resolutionNotes} onChange={(e) => setResolutionNotes(e.target.value)} rows={3} />
+            <textarea value={resolutionNotes} onChange={(e) => { setResolutionNotes(e.target.value); setNotice(null) }} rows={3} />
           </label>
-          <button type="button" className="primary-btn" onClick={submitResolve} disabled={!canResolve}>
-            Resolve investigation
+          <button type="button" className="primary-btn" onClick={submitResolve} disabled={!canResolve || busyOp !== null}>
+            {busyOp === 'resolve' ? 'Resolving…' : 'Resolve investigation'}
           </button>
           <p className="muted">Resolving needs a recorded finding plus resolution notes. The linked alert is set to Resolved.</p>
         </div>

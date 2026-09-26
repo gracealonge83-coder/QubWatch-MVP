@@ -13,6 +13,8 @@ function Transactions({ transactions, products, users, currentUser, onAdd }) {
     quantity: '1',
     discount: '0',
   })
+  const [notice, setNotice] = useState('')
+  const [busy, setBusy] = useState(false)
 
   const productById = Object.fromEntries(products.map((p) => [p.id, p]))
   const userById = Object.fromEntries(users.map((u) => [u.id, u]))
@@ -27,21 +29,31 @@ function Transactions({ transactions, products, users, currentUser, onAdd }) {
   function handleChange(event) {
     const { name, value } = event.target
     setForm((prev) => ({ ...prev, [name]: value }))
+    setNotice('')
   }
 
   async function handleSubmit(event) {
     event.preventDefault()
     if (!selected || !(quantity > 0)) return
     if (!(discountPct >= 0) || !(discountPct <= 100)) return
-    const ok = await onAdd({
-      type: form.type,
-      productId: form.productId,
-      quantity,
-      amount: previewAmount,
-      staffId: form.staffId || currentUser.id,
-      discount: discountPct,
-    })
-    if (ok) setForm((prev) => ({ ...prev, quantity: '1', discount: '0' }))
+    setNotice('')
+    setBusy(true)
+    let ok = false
+    try {
+      ok = await onAdd({
+        type: form.type,
+        productId: form.productId,
+        quantity,
+        amount: previewAmount,
+        staffId: form.staffId || currentUser.id,
+        discount: discountPct,
+      })
+    } finally {
+      setBusy(false)
+    }
+    if (!ok) return
+    setForm((prev) => ({ ...prev, quantity: '1', discount: '0' }))
+    setNotice('Transaction recorded successfully.')
   }
 
   const visible = [...transactions].reverse().filter((t) => {
@@ -90,7 +102,8 @@ function Transactions({ transactions, products, users, currentUser, onAdd }) {
             <input name="discount" value={form.discount} onChange={handleChange} />
           </label>
           <p className="muted">Amount: ₦{previewAmount.toLocaleString()}</p>
-          <button type="submit" className="primary-btn">Record</button>
+          <button type="submit" className="primary-btn" disabled={busy}>{busy ? 'Recording…' : 'Record'}</button>
+          {notice && <p role="status">{notice}</p>}
         </form>
       </div>
 

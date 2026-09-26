@@ -45,10 +45,13 @@ function validate(values) {
 function MonitoringRules({ config, canEdit, onSave, onRestore }) {
   const [form, setForm] = useState(() => toStrings(config))
   const [errors, setErrors] = useState({})
+  const [notice, setNotice] = useState('')
+  const [busy, setBusy] = useState(null)
 
   function handleChange(event) {
     const { name, value } = event.target
     setForm((prev) => ({ ...prev, [name]: value }))
+    setNotice('')
   }
 
   async function handleSave(event) {
@@ -57,22 +60,39 @@ function MonitoringRules({ config, canEdit, onSave, onRestore }) {
     const found = validate(form)
     setErrors(found)
     if (Object.keys(found).length > 0) return
-    await onSave({
-      LARGE_TRANSACTION_AMOUNT: Number(form.LARGE_TRANSACTION_AMOUNT),
-      REPEATED_REFUNDS_COUNT: Number(form.REPEATED_REFUNDS_COUNT),
-      REPEATED_REFUNDS_WINDOW_MINUTES: Number(form.REPEATED_REFUNDS_WINDOW_MINUTES),
-      EXCESSIVE_DISCOUNT_PCT: Number(form.EXCESSIVE_DISCOUNT_PCT),
-      FREQUENCY_COUNT: Number(form.FREQUENCY_COUNT),
-      FREQUENCY_WINDOW_MINUTES: Number(form.FREQUENCY_WINDOW_MINUTES),
-    })
+    setNotice('')
+    setBusy('save')
+    let ok = false
+    try {
+      ok = await onSave({
+        LARGE_TRANSACTION_AMOUNT: Number(form.LARGE_TRANSACTION_AMOUNT),
+        REPEATED_REFUNDS_COUNT: Number(form.REPEATED_REFUNDS_COUNT),
+        REPEATED_REFUNDS_WINDOW_MINUTES: Number(form.REPEATED_REFUNDS_WINDOW_MINUTES),
+        EXCESSIVE_DISCOUNT_PCT: Number(form.EXCESSIVE_DISCOUNT_PCT),
+        FREQUENCY_COUNT: Number(form.FREQUENCY_COUNT),
+        FREQUENCY_WINDOW_MINUTES: Number(form.FREQUENCY_WINDOW_MINUTES),
+      })
+    } finally {
+      setBusy(null)
+    }
+    if (!ok) return
+    setNotice('Rules saved successfully.')
   }
 
   async function handleRestore() {
     if (!canEdit) return
-    const ok = await onRestore()
+    setNotice('')
+    setBusy('restore')
+    let ok = false
+    try {
+      ok = await onRestore()
+    } finally {
+      setBusy(null)
+    }
     if (!ok) return
     setForm(toStrings({ ...DEMO_THRESHOLDS }))
     setErrors({})
+    setNotice('Default rules restored.')
   }
 
   return (
@@ -100,11 +120,12 @@ function MonitoringRules({ config, canEdit, onSave, onRestore }) {
         ))}
         <p className="muted">Inventory Discrepancy is based on recorded vs expected stock and is not configurable.</p>
         <div className="form-row">
-          <button type="submit" className="primary-btn" disabled={!canEdit}>Save rules</button>
-          <button type="button" className="secondary-btn" onClick={handleRestore} disabled={!canEdit}>
-            Restore Default Rules
+          <button type="submit" className="primary-btn" disabled={!canEdit || busy !== null}>{busy === 'save' ? 'Saving…' : 'Save rules'}</button>
+          <button type="button" className="secondary-btn" onClick={handleRestore} disabled={!canEdit || busy !== null}>
+            {busy === 'restore' ? 'Restoring…' : 'Restore Default Rules'}
           </button>
         </div>
+        {notice && <p role="status">{notice}</p>}
       </form>
     </div>
   )

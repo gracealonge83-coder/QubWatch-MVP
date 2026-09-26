@@ -10,6 +10,8 @@ function Products({ products, onAdd, onUpdate }) {
   const [stockFilter, setStockFilter] = useState('all')
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [notice, setNotice] = useState('')
+  const [busy, setBusy] = useState(false)
 
   const categories = [...new Set(products.map((p) => p.category))]
 
@@ -25,10 +27,12 @@ function Products({ products, onAdd, onUpdate }) {
   function handleChange(event) {
     const { name, value } = event.target
     setForm((prev) => ({ ...prev, [name]: value }))
+    setNotice('')
   }
 
   function startEdit(product) {
     setEditingId(product.id)
+    setNotice('')
     setForm({
       name: product.name,
       category: product.category,
@@ -49,13 +53,22 @@ function Products({ products, onAdd, onUpdate }) {
     if (!form.name.trim() || !form.category.trim()) return
     if (!(price > 0) || !(stock >= 0)) return
     const data = { name: form.name.trim(), category: form.category.trim(), price, stock }
+    setNotice('')
+    setBusy(true)
     let ok = false
-    if (editingId) {
-      ok = await onUpdate(editingId, data)
-    } else {
-      ok = await onAdd(data)
+    try {
+      if (editingId) {
+        ok = await onUpdate(editingId, data)
+      } else {
+        ok = await onAdd(data)
+      }
+    } finally {
+      setBusy(false)
     }
-    if (ok) cancelEdit()
+    if (!ok) return
+    const wasEditing = !!editingId
+    cancelEdit()
+    setNotice(wasEditing ? 'Product updated successfully.' : 'Product added successfully.')
   }
 
   return (
@@ -80,11 +93,12 @@ function Products({ products, onAdd, onUpdate }) {
             <input name="stock" value={form.stock} onChange={handleChange} placeholder="e.g. 42" />
           </label>
           <div className="form-row">
-            <button type="submit" className="primary-btn">{editingId ? 'Save changes' : 'Add product'}</button>
+            <button type="submit" className="primary-btn" disabled={busy}>{busy ? 'Saving…' : (editingId ? 'Save changes' : 'Add product')}</button>
             {editingId && (
               <button type="button" className="secondary-btn" onClick={cancelEdit}>Cancel</button>
             )}
           </div>
+          {notice && <p role="status">{notice}</p>}
         </form>
       </div>
 

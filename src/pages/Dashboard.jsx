@@ -81,6 +81,9 @@ function Dashboard({ business, user, users, products, transactions, alerts, open
       <div className="grid" style={{ marginTop: '1rem' }}>
         <div className="card">
           <h2>Recent activity</h2>
+          {recent.length === 0 ? (
+            <p className="muted">No recent activity yet.</p>
+          ) : (
           <ul>
             {recent.map((t) => (
               <li key={t.id}>
@@ -88,6 +91,7 @@ function Dashboard({ business, user, users, products, transactions, alerts, open
               </li>
             ))}
           </ul>
+          )}
         </div>
 
         <div className="card">
