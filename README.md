@@ -6,7 +6,7 @@ QubWatch is a business monitoring and investigation application for business own
 
 ## Current implementation
 
-The MVP prototype currently includes:
+The prototype currently includes:
 
 - Responsive React interface built with Vite and JavaScript
 - Express backend API
@@ -18,7 +18,7 @@ The MVP prototype currently includes:
 - Rule-based monitoring and alert generation
 - Investigation notes, findings, resolutions, and audit information
 - AI Assistant demonstration responses
-- Loading, empty, success, and error UI states for backend-connected operations
+- Loading, empty, success and error UI states for backend-connected operations
 - Installable PWA support and responsive mobile web experience
 
 The initial MVP deliberately uses rule-based monitoring rather than advanced machine-learning anomaly detection. QubWatch identifies unusual activity for review; it does not automatically conclude that wrongdoing has occurred.
@@ -80,7 +80,7 @@ Create a production frontend build:
 npm run build
 ```
 
-## Lesson 6 prototype preview
+## Prototype preview
 
 The repository contains a self-contained `design.html` preview so the prototype can be rendered directly by an HTML preview service without requiring the React development server or external assets.
 
