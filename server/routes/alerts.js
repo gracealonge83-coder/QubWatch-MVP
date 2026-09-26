@@ -3,6 +3,7 @@ import { getDb } from '../db.js'
 import { requireAuth, requireRole } from '../auth.js'
 import { ALERT_STATUSES, badRequest, collect, nowStamp } from '../validate.js'
 import { evaluateRules, DEMO_THRESHOLDS } from '../../shared/rules.js'
+import { addAudit } from '../auditLog.js'
 
 const MANAGERS = ['Business Owner', 'Authorized Manager']
 
@@ -79,11 +80,14 @@ router.patch('/alerts/:id/status', requireRole(...MANAGERS), (req, res) => {
     res.status(404).json({ error: 'Alert not found' })
     return
   }
-  db.prepare(
-    `INSERT INTO alert_statuses (alert_id, status, updated_by, updated_at)
-     VALUES (?, ?, ?, ?)
-     ON CONFLICT(alert_id) DO UPDATE SET status = excluded.status, updated_by = excluded.updated_by, updated_at = excluded.updated_at`,
-  ).run(req.params.id, body.status, req.user.id, nowStamp())
+  db.transaction(() => {
+    db.prepare(
+      `INSERT INTO alert_statuses (alert_id, status, updated_by, updated_at)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(alert_id) DO UPDATE SET status = excluded.status, updated_by = excluded.updated_by, updated_at = excluded.updated_at`,
+    ).run(req.params.id, body.status, req.user.id, nowStamp())
+    addAudit(db, null, req.user.id, `Alert reviewed: ${req.params.id} → ${body.status}`)
+  })()
   const updated = deriveAlerts(db).find((a) => a.id === req.params.id)
   res.json(updated)
 })

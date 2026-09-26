@@ -3,6 +3,7 @@ import { getDb } from '../db.js'
 import { requireAuth, requireRole } from '../auth.js'
 import { TXN_TYPES, discountPct, badRequest, collect, nowStamp } from '../validate.js'
 import { newId } from '../ids.js'
+import { addAudit } from '../auditLog.js'
 
 const RECORDERS = ['Business Owner', 'Authorized Manager', 'Staff User']
 
@@ -58,9 +59,13 @@ router.post('/transactions', requireRole(...RECORDERS), (req, res) => {
   // Amount is always recomputed server-side; client previews are not trusted.
   const amount = Math.round(product.price * body.quantity * (1 - (body.discount || 0) / 100))
   const id = newId('txn')
-  db.prepare(
-    'INSERT INTO transactions (id, date, type, product_id, quantity, amount, staff_id, discount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-  ).run(id, nowStamp(), body.type, body.productId, body.quantity, amount, staffId, body.discount)
+  const date = nowStamp()
+  db.transaction(() => {
+    db.prepare(
+      'INSERT INTO transactions (id, date, type, product_id, quantity, amount, staff_id, discount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    ).run(id, date, body.type, body.productId, body.quantity, amount, staffId, body.discount)
+    addAudit(db, null, req.user.id, `Transaction created: ${id}`)
+  })()
   const created = db.prepare('SELECT * FROM transactions WHERE id = ?').get(id)
   res.status(201).json(mapTransaction(created))
 })

@@ -4,6 +4,7 @@ import { requireAuth, requireRole } from '../auth.js'
 import { FINDINGS, badRequest, collect, requiredText, nowStamp } from '../validate.js'
 import { newId } from '../ids.js'
 import { deriveAlerts } from './alerts.js'
+import { addAudit } from '../auditLog.js'
 
 const MANAGERS = ['Business Owner', 'Authorized Manager']
 const OPEN_STATES = ['Open', 'Under Investigation']
@@ -36,16 +37,6 @@ function mapInvestigation(row) {
     createdAt: row.created_at,
     resolvedAt: row.resolved_at,
   }
-}
-
-function addAudit(db, investigationId, userId, action) {
-  db.prepare('INSERT INTO audit (id, investigation_id, user_id, action, date) VALUES (?, ?, ?, ?, ?)').run(
-    newId('audit'),
-    investigationId,
-    userId,
-    action,
-    nowStamp(),
-  )
 }
 
 const router = Router()
