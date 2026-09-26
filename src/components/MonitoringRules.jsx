@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { DEMO_THRESHOLDS } from '../monitoring/rules.js'
+import { DEMO_THRESHOLDS } from '../../shared/rules.js'
 
 // Monitoring Rules editor (PRD Section 16, Configurable Rules).
 // Business Owner and Authorized Manager can edit; Staff users cannot.

@@ -8,7 +8,7 @@ import Alerts from './pages/Alerts.jsx'
 import Investigations from './pages/Investigations.jsx'
 import AiAssistant from './pages/AiAssistant.jsx'
 import Notifications from './pages/Notifications.jsx'
-import { evaluateRules, DEMO_THRESHOLDS } from './monitoring/rules.js'
+import { evaluateRules, DEMO_THRESHOLDS } from '../shared/rules.js'
 import { business as initialBusiness, users as seedUsers, products as seedProducts, transactions as seedTransactions } from './data/mockData.js'
 import { loadBusiness, saveBusiness, loadUsers, saveUsers } from './storage/localStore.js'
 import {
