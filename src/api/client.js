@@ -30,26 +30,26 @@ async function request(path, { method = 'GET', body } = {}) {
     return { ok: true, status: res.status, data, error: null, fields: null }
   }
   if (res.status === 401) {
-    return { ok: false, status, data: null, error: 'Your session has ended. Please log in again.', fields: null }
+    return { ok: false, status: res.status, data: null, error: 'Your session has ended. Please log in again.', fields: null }
   }
   if (res.status === 403) {
     return {
       ok: false,
-      res.status,
+      status: res.status,
       data: null,
       error: (data && data.error) || 'You do not have permission to do that.',
       fields: null,
     }
   }
   if (res.status === 404) {
-    return { ok: false, status, data: null, error: (data && data.error) || 'Not found.', fields: null }
+    return { ok: false, status: res.status, data: null, error: (data && data.error) || 'Not found.', fields: null }
   }
   if (res.status === 409) {
-    return { ok: false, status, data: null, error: (data && data.error) || 'That conflicts with the current state.', fields: null }
+    return { ok: false, status: res.status, data: null, error: (data && data.error) || 'That conflicts with the current state.', fields: null }
   }
   return {
     ok: false,
-    res.status,
+    status: res.status,
     data: null,
     error: (data && data.error) || 'Something went wrong. Please try again.',
     fields: data && data.fields ? data.fields : null,
