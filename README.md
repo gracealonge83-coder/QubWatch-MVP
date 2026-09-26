@@ -1,4 +1,4 @@
-# QubWatch MVP
+# QubWatch Version 1
 
 **QubWatch — Giving you smarter eyes.**
 
