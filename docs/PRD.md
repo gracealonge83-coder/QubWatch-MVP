@@ -1154,3 +1154,8 @@ The current roadmap is:
 3. Test the complete monitoring → alert → investigation → finding → resolution journey.
 4. Prepare and record the Lesson 6 prototype demonstration.
 5. Continue with the remaining mobile and final testing work described in Stage 6 and Stage 7.
+
+
+## 44.9 Lesson 6 Design Refinement Note
+
+For the Lesson 6 design preview, the initial dashboard concept was refined to make the interface clearer and easier to review. The refinement uses a readable Inter/system typography stack, a high-contrast dark navigation area, restrained neutral card/background colors, clear severity styling, and a prominent blue action button. A sample monitoring-rule input and action were also added so the preview demonstrates a styled form control alongside the button and dashboard elements.
