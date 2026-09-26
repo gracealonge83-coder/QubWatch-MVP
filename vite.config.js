@@ -19,6 +19,12 @@ export default defineConfig({
     ...(hasLocalCert
       ? { https: { key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) } }
       : {}),
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [
     react(),

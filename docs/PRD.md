@@ -189,6 +189,11 @@ The MVP includes:
 * In-app notifications
 * Basic search and filtering
 * Basic activity/audit information
+* Backend API with database persistence for business, team, operational, and audit records
+* Basic user authentication (login sessions) using the existing four roles
+* Server-enforced role permissions for sensitive actions
+* Complete UI states (loading, empty, success, error) for backend-connected operations
+* Server-side validation of all writes
 * Responsive web interface
 * Mobile application
 
@@ -217,7 +222,7 @@ The following are outside the first MVP:
 * Advanced analytics and forecasting
 * User deletion
 * Active/inactive user status
-* Authentication and password management
+* Password recovery
 * Permission enforcement
 
 These features may be considered in later versions.
@@ -257,7 +262,7 @@ The MVP may initially use a simple business setup form.
 
 The business profile remains editable through Settings after initial setup.
 Saving updates the business information, and the saved business information is reflected on the Dashboard and header where applicable.
-Saved business information persists in the browser (browser-local storage) so it remains available after page refresh and when the user reopens QubWatch in the same browser and device.
+Saved business information persists via the backend database so it remains available after page refresh and when the user reopens QubWatch; browser-local storage may remain as an offline cache.
 The same browser-local persistence model also retains operational records (products, transactions, alert statuses, investigations including notes, findings and resolutions, and audit records) on the same browser and device.
 
 ---
@@ -724,14 +729,13 @@ They can edit an existing user's name and role.
 Added and edited users are saved in browser storage and remain available after page refresh and when the user reopens QubWatch in the same browser and device.
 User references continue to resolve by user ID.
 
-This MVP persistence uses browser-local storage and in-memory application state only. It does not introduce a backend, database, cloud synchronization, authentication, or multi-device synchronization.
+Persistence is provided by a backend API with database storage as the system of record; browser-local storage may remain as an offline cache. Record IDs and data-model concepts from Section 37 are preserved unchanged. This introduces basic authentication (login sessions) for the existing four roles. It does not introduce dedicated offline synchronization, conflict-resolution synchronization, or advanced authentication.
 
 The MVP does NOT include:
 
 * User deletion
 * Active/inactive user status
-* Authentication and password management
-* Permission enforcement
+* Password recovery
 
 ---
 
@@ -820,6 +824,8 @@ The mock transactions should contain both normal and unusual activities so that 
 # 37. MVP Data Model
 
 The initial application should work with these main data entities:
+
+Record IDs defined below are preserved unchanged and serve as primary keys; the backend validates all writes.
 
 ### Business
 
@@ -1001,6 +1007,7 @@ QubWatch should feel:
 * Useful to a busy business owner
 
 The application should present important information without overwhelming the user.
+Operations connected to the backend show loading, empty, success, and error states.
 
 The primary experience should help the user quickly answer:
 

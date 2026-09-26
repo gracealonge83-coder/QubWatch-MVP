@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# SQLite database files (machine-local, created by `npm run dev:api`)
+data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
+
 # Local dev HTTPS certificates (machine-specific, never commit)
 *.pem
 
