@@ -35,7 +35,7 @@ async function request(path, { method = 'GET', body } = {}) {
   if (res.status === 403) {
     return {
       ok: false,
-      status,
+      res.status,
       data: null,
       error: (data && data.error) || 'You do not have permission to do that.',
       fields: null,
@@ -49,7 +49,7 @@ async function request(path, { method = 'GET', body } = {}) {
   }
   return {
     ok: false,
-    status,
+    res.status,
     data: null,
     error: (data && data.error) || 'Something went wrong. Please try again.',
     fields: data && data.fields ? data.fields : null,
