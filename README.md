@@ -2,7 +2,7 @@
 
 **QubWatch — Giving you smarter eyes.**
 
-QubWatch is a business monitoring and investigation application for business owners and authorized managers of inventory-based, high-transaction businesses. It monitors business activity, identifies unusual patterns using defined rules, and presents relevant information for human review.
+QubWatch is a business monitoring and investigation application for business owners and authorized managers of inventory-based, high-transaction businesses. It monitors business activities, identifies unusual patterns using defined rules and presents relevant information for human review.
 
 ## Current implementation
 
